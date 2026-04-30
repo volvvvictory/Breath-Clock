@@ -26,8 +26,18 @@
       user-select: none;
     }
 
+    /* ── Orrery ── */
+    #orrery {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+
     /* ── Moon ── */
     .moon-section {
+      position: relative;
+      z-index: 2;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -44,11 +54,13 @@
       font-size: 10px;
       font-style: italic;
       letter-spacing: 0.14em;
-      opacity: 0.45;
+      opacity: 0.60;
     }
 
     /* ── Circle ── */
     .main-section {
+      position: relative;
+      z-index: 2;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -57,39 +69,14 @@
       gap: 38px;
     }
 
-    #circle {
-      border-radius: 50%;
-      will-change: transform;
-      transition: background 14s ease, box-shadow 14s ease;
-      width: clamp(180px, 38vmin, 260px);
-      height: clamp(180px, 38vmin, 260px);
-    }
 
     .breath-count {
       font-size: 12px;
       letter-spacing: 0.1em;
-      opacity: 0.3;
+      opacity: 0.50;
       min-height: 1.5em;
       text-align: center;
     }
-
-    /* ── Past trigger ── */
-    #past-trigger {
-      font-family: 'Lora', Georgia, serif;
-      font-size: 10px;
-      font-style: italic;
-      letter-spacing: 0.2em;
-      background: none;
-      border: none;
-      color: inherit;
-      opacity: 0.22;
-      cursor: pointer;
-      padding: 8px;
-      transition: opacity 0.5s;
-      position: relative;
-      z-index: 2;
-    }
-    #past-trigger:hover { opacity: 0.55; }
 
     /* ── Timeline ── */
     #timeline {
@@ -98,15 +85,15 @@
       left: 0;
       width: 100%;
       height: 88px;
-      pointer-events: none;
-      z-index: 1;
+      z-index: 2;
+      cursor: pointer;
     }
 
     /* ── Past panel ── */
     #past-panel {
       position: fixed;
       inset: auto 0 0 0;
-      height: clamp(260px, 42vh, 360px);
+      height: clamp(360px, 58vh, 480px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -145,57 +132,21 @@
       font-size: 10px;
       font-style: italic;
       letter-spacing: 0.12em;
-      opacity: 0.45;
+      opacity: 0.62;
     }
 
     #past-desc {
       font-size: 13px;
       line-height: 1.8;
-      opacity: 0.42;
+      opacity: 0.58;
       text-align: center;
       max-width: 300px;
     }
 
-    .slider-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-
-    input[type="range"] {
-      width: min(280px, 88%);
-      -webkit-appearance: none;
-      appearance: none;
-      height: 1px;
-      background: currentColor;
-      opacity: 0.18;
-      outline: none;
-      cursor: pointer;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 11px; height: 11px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.5;
-      cursor: pointer;
-    }
-    input[type="range"]::-moz-range-thumb {
-      width: 11px; height: 11px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.5;
-      cursor: pointer;
-      border: none;
-    }
-
-    #slider-label {
-      font-size: 10px;
-      font-style: italic;
-      letter-spacing: 0.13em;
-      opacity: 0.3;
+    #sky-canvas {
+      display: block;
+      width:  clamp(160px, 36vmin, 200px);
+      height: clamp(160px, 36vmin, 200px);
     }
 
     #past-close {
@@ -206,15 +157,40 @@
       background: none;
       border: none;
       color: inherit;
-      opacity: 0.22;
+      opacity: 0.38;
       cursor: pointer;
       padding: 6px;
       transition: opacity 0.4s;
     }
-    #past-close:hover { opacity: 0.5; }
+    #past-close:hover { opacity: 0.65; }
+
+    /* ── Indicators ── */
+    .indicators {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.13em;
+      opacity: 0.48;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .ind-rule {
+      width: 28px;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.35;
+      margin: 3px 0;
+    }
   </style>
 </head>
 <body>
+
+  <canvas id="orrery"></canvas>
 
   <div class="moon-section">
     <canvas id="moon-canvas" width="108" height="108"></canvas>
@@ -222,11 +198,16 @@
   </div>
 
   <div class="main-section">
-    <div id="circle"></div>
     <div class="breath-count" id="breath-count"></div>
   </div>
 
-  <button id="past-trigger">enter the past</button>
+  <div class="indicators" id="indicators">
+    <div id="ind-lunar-pos">—</div>
+    <div id="ind-lunar-event">—</div>
+    <div class="ind-rule"></div>
+    <div id="ind-uae-pop">—</div>
+    <div id="ind-uae-demo">—</div>
+  </div>
 
   <canvas id="timeline"></canvas>
 
@@ -237,10 +218,7 @@
         <div id="past-phase"></div>
       </div>
       <div id="past-desc"></div>
-      <div class="slider-wrap">
-        <input type="range" id="moon-slider" min="0" max="12" step="1" value="0">
-        <div id="slider-label">now</div>
-      </div>
+      <canvas id="sky-canvas" width="400" height="400"></canvas>
       <button id="past-close">return</button>
     </div>
   </div>
@@ -249,29 +227,259 @@
     // ── Breath constants ────────────────────────────────────────────────────────
     // UAE 2025 weighted: (0.204×24) + (0.787×15) + (0.009×17) = 16.854 br/min
     const BREATHS_PER_MIN = 16.854;
-    const CYCLE_MS = 60000 / BREATHS_PER_MIN; // ≈ 3561 ms
+    const CMS_CALM  = 60000 / 12;                      // 5000ms — resting
+    const CMS_SURGE = 60000 / (BREATHS_PER_MIN * 1.3); // ~2740ms — collective pulse
     const INHALE_FRAC = 0.42;
 
     // ── Lunar constants ─────────────────────────────────────────────────────────
     const LUNAR_DAYS = 29.53059;
     const KNOWN_NEW_MOON = new Date('2000-01-06T18:14:00Z');
 
-    // ── Past descriptions ───────────────────────────────────────────────────────
-    const PAST_TEXTS = [
-      'Now. This breath. This moon.',
-      'One moon ago. The air was barely different.',
-      'Two cycles back. A week you half-remember.',
-      'Three moons past. The light fell the same way.',
-      'Four moons ago. Twelve weeks from this breath.',
-      'Five cycles. The season was beginning to turn.',
-      'Half a year of moons. The same sky, different stars.',
-      'Seven cycles gone. A whole season turned quietly.',
-      'Eight moons ago. Before the thing that shifted.',
-      'Nine months, counted in breath, not weeks.',
-      'Ten moons past. A quieter version of now.',
-      'Eleven cycles. The year almost complete.',
-      'One full year of moons. The circle closes.',
+    // ── UAE / astronomical constants ────────────────────────────────────────────
+    const UAE_LAT = 24.4539;    // Abu Dhabi °N
+    const UAE_LON = 54.3773;    // Abu Dhabi °E
+    const UAE_POP = 9_970_000;  // 2025 estimate
+    // Demographic groups driving BREATHS_PER_MIN
+    const DEMO = [
+      { label: 'youth', frac: 0.204, rate: 24 },
+      { label: 'adult', frac: 0.787, rate: 15 },
+      { label: 'elder', frac: 0.009, rate: 17 },
     ];
+
+    function toRad(deg) { return deg * Math.PI / 180; }
+    function toDeg(rad) { return rad * 180 / Math.PI; }
+    function normAngle(x) { return ((x % 360) + 360) % 360; }
+
+    // Low-precision moon altitude/azimuth for UAE (accurate to ~1–2°)
+    function moonAltAz(date) {
+      const d   = date.getTime() / 86400000 + 2440587.5 - 2451545.0; // days from J2000
+      const L   = normAngle(218.316 + 13.176396 * d);  // mean longitude
+      const M   = normAngle(134.963 + 13.064993 * d);  // mean anomaly
+      const F   = normAngle( 93.272 + 13.229350 * d);  // argument of latitude
+      const lon = L + 6.289 * Math.sin(toRad(M));      // ecliptic longitude
+      const lat = 5.128 * Math.sin(toRad(F));          // ecliptic latitude
+      const eps = 23.439 - 0.0000004 * d;              // obliquity
+
+      const sinDec = Math.sin(toRad(lat)) * Math.cos(toRad(eps))
+                   + Math.cos(toRad(lat)) * Math.sin(toRad(eps)) * Math.sin(toRad(lon));
+      const dec = toDeg(Math.asin(sinDec));
+      const ra  = normAngle(toDeg(Math.atan2(
+        Math.sin(toRad(lon)) * Math.cos(toRad(eps)) - Math.sin(toRad(lat)) * Math.sin(toRad(eps)),
+        Math.cos(toRad(lon))
+      )));
+
+      const gmst = normAngle(280.46061837 + 360.98564736629 * d); // Greenwich sidereal time
+      const ha   = normAngle(gmst + UAE_LON - ra);                // local hour angle
+
+      const latR = toRad(UAE_LAT), decR = toRad(dec), haR = toRad(ha);
+      const sinAlt = Math.sin(latR) * Math.sin(decR) + Math.cos(latR) * Math.cos(decR) * Math.cos(haR);
+      const alt  = toDeg(Math.asin(sinAlt));
+      const cosAlt = Math.cos(toRad(alt));
+      const cosAz  = Math.max(-1, Math.min(1,
+        (Math.sin(decR) - Math.sin(latR) * sinAlt) / (Math.cos(latR) * cosAlt)
+      ));
+      let az = toDeg(Math.acos(cosAz));
+      if (Math.sin(haR) > 0) az = 360 - az;
+      return { altitude: alt, azimuth: az };
+    }
+
+    function azLabel(az) {
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      return dirs[Math.round(az / 22.5) % 16];
+    }
+
+    function updateIndicators() {
+      const now  = new Date();
+      const age  = lunarAge(now);
+      const illum = Math.round((1 - Math.cos(age / LUNAR_DAYS * 2 * Math.PI)) / 2 * 100);
+
+      const { altitude, azimuth } = moonAltAz(now);
+      const altStr = (altitude >= 0 ? '+' : '') + Math.round(altitude) + '°';
+      const vis    = altitude >= 0 ? 'above horizon' : 'below horizon';
+      document.getElementById('ind-lunar-pos').textContent =
+        `${altStr} · ${azLabel(azimuth)} · ${illum}% lit · ${vis}`;
+
+      const halfCycle = LUNAR_DAYS / 2;
+      let dToFull = halfCycle - age; if (dToFull < 0) dToFull += LUNAR_DAYS;
+      let dToNew  = LUNAR_DAYS - age;
+      document.getElementById('ind-lunar-event').textContent =
+        dToFull < dToNew
+          ? `full moon in ${dToFull.toFixed(1)} days`
+          : `new moon in ${dToNew.toFixed(1)} days`;
+
+      document.getElementById('ind-uae-pop').textContent =
+        `UAE · ${(UAE_POP / 1e6).toFixed(2)}M · ${BREATHS_PER_MIN.toFixed(3)} br/min weighted`;
+      document.getElementById('ind-uae-demo').textContent =
+        DEMO.map(d => `${Math.round(d.frac * 100)}% ${d.label} ${d.rate}/min`).join(' · ');
+    }
+
+    // ── Planetary orbital elements ──────────────────────────────────────────────
+    // Format: [a, e, I, L, ω̃, Ω,  de, dI, dL, dω̃, dΩ] — rates per Julian century
+    // Source: Jean Meeus "Astronomical Algorithms" 2nd ed / JPL Table 1 (1800–2050)
+    const EARTH_EL = [
+      1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0,
+      -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0
+    ];
+    const PLANET_ELS = [
+      { s: 'Merc', el: [0.38709927, 0.20563593,  7.00497902, 252.25032350,  77.45779628,  48.33076593,  0.00001906, -0.00594749, 149474.0722491,  0.16047689, -0.12534081] },
+      { s: 'Venu', el: [0.72333566, 0.00677672,  3.39467605, 181.97909950, 131.60246718,  76.67984255, -0.00004107, -0.00078890,  58519.21264880,  0.00268329, -0.27769418] },
+      { s: 'Mars', el: [1.52371034, 0.09339410,  1.84969142, 355.43299958, -23.94362959,  49.55953891,  0.00007882, -0.00813131,  19141.69551763,  0.44441088, -0.29257343] },
+      { s: 'Jup',  el: [5.20288700, 0.04838624,  1.30439695,  34.39644051,  14.72847983, 100.47390909, -0.00013253, -0.00183714,   3036.30268499,  0.21252668,  0.20469106] },
+      { s: 'Sat',  el: [9.53667594, 0.05386179,  2.48599187,  50.07571329,  92.59887831, 113.66242448, -0.00050991,  0.00193609,   1223.51144399, -0.41897216, -0.28867794] },
+    ];
+
+    function solveKepler(M, e) {
+      let E = M;
+      for (let k = 0; k < 6; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+      return E;
+    }
+
+    function orbitXyz(el, T) {
+      const [a, e0, I0, L0, wt0, O0, de, dI, dL, dwt, dO] = el;
+      const e     = e0 + de * T;
+      const I     = toRad(I0 + dI * T);
+      const wTil  = normAngle(wt0 + dwt * T);   // longitude of perihelion (ω̃)
+      const Omega = normAngle(O0  + dO  * T);   // longitude of ascending node (Ω)
+      const L     = normAngle(L0  + dL  * T);   // mean longitude
+      const M     = toRad(normAngle(L - wTil)); // mean anomaly
+      const omega = toRad(normAngle(wTil - Omega)); // argument of perihelion
+      const OmR   = toRad(Omega);
+      const E     = solveKepler(M, e);
+      const v     = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2));
+      const r     = a * (1 - e * Math.cos(E));
+      return {
+        x: r * (Math.cos(OmR) * Math.cos(omega + v) - Math.sin(OmR) * Math.sin(omega + v) * Math.cos(I)),
+        y: r * (Math.sin(OmR) * Math.cos(omega + v) + Math.cos(OmR) * Math.sin(omega + v) * Math.cos(I)),
+        z: r * (Math.sin(omega + v) * Math.sin(I)),
+      };
+    }
+
+    function geoAltAz(ra, dec, d) {
+      const gmst = normAngle(280.46061837 + 360.98564736629 * d);
+      const ha   = normAngle(gmst + UAE_LON - ra);
+      const latR = toRad(UAE_LAT), decR = toRad(dec), haR = toRad(ha);
+      const sinAlt = Math.sin(latR) * Math.sin(decR) + Math.cos(latR) * Math.cos(decR) * Math.cos(haR);
+      const alt    = toDeg(Math.asin(sinAlt));
+      const cosAz  = Math.max(-1, Math.min(1,
+        (Math.sin(decR) - Math.sin(latR) * sinAlt) / (Math.cos(latR) * Math.cos(toRad(alt)))
+      ));
+      let az = toDeg(Math.acos(cosAz));
+      if (Math.sin(haR) > 0) az = 360 - az;
+      return { altitude: alt, azimuth: az };
+    }
+
+    function planetAltAz(el, date) {
+      const d   = date.getTime() / 86400000 + 2440587.5 - 2451545.0;
+      const T   = d / 36525;
+      const pl  = orbitXyz(el, T);
+      const ea  = orbitXyz(EARTH_EL, T);
+      const dx  = pl.x - ea.x, dy = pl.y - ea.y, dz = pl.z - ea.z;
+      const eps = toRad(23.439 - 0.0000004 * d);
+      const X   = dx;
+      const Y   = dy * Math.cos(eps) - dz * Math.sin(eps);
+      const Z   = dy * Math.sin(eps) + dz * Math.cos(eps);
+      const ra  = normAngle(toDeg(Math.atan2(Y, X)));
+      const dec = toDeg(Math.asin(Z / Math.sqrt(X * X + Y * Y + Z * Z)));
+      return geoAltAz(ra, dec, d);
+    }
+
+    // ── Sky dome ────────────────────────────────────────────────────────────────
+    // Azimuthal equidistant projection: zenith = centre, N = top, horizon = outer circle
+    function skyProject(alt, az, cx, cy, R) {
+      const r = R * Math.max(0, 1 - alt / 90);
+      return { x: cx + r * Math.sin(toRad(az)), y: cy - r * Math.cos(toRad(az)) };
+    }
+
+    function drawSky(canvas, dateMs) {
+      const dpr  = window.devicePixelRatio || 1;
+      const size = canvas.offsetWidth || 180;
+      const px   = Math.round(size * dpr);
+      if (canvas.width !== px) { canvas.width = canvas.height = px; }
+
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+
+      const cx = size / 2, cy = size / 2, R = size / 2 - 14;
+      const [fR, fG, fB] = parseRgb(pal.fg);
+      const [lR, lG, lB] = parseRgb(pal.mLit);
+      const fg  = (a) => `rgba(${fR},${fG},${fB},${a})`;
+      const lit = (a) => `rgba(${lR},${lG},${lB},${a})`;
+
+      // Horizon + altitude rings
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.strokeStyle = fg(0.14); ctx.stroke();
+      [30, 60].forEach(alt => {
+        ctx.beginPath(); ctx.arc(cx, cy, R * (1 - alt / 90), 0, Math.PI * 2);
+        ctx.strokeStyle = fg(0.05); ctx.lineWidth = 0.5; ctx.stroke();
+      });
+
+      // Cardinal labels
+      ctx.font = `italic 8px 'Lora', Georgia, serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      [['N', cx, cy - R - 9, 0.22], ['S', cx, cy + R + 9, 0.22],
+       ['E', cx + R + 9, cy, 0.13], ['W', cx - R - 9, cy, 0.13]].forEach(([t, x, y, a]) => {
+        ctx.fillStyle = fg(a); ctx.fillText(t, x, y);
+      });
+
+      // Ecliptic — dashed, very faint
+      const d   = dateMs / 86400000 + 2440587.5 - 2451545.0;
+      const eps = toRad(23.439 - 0.0000004 * d);
+      ctx.beginPath();
+      let ecOn = false;
+      for (let lon = 0; lon <= 360; lon += 3) {
+        const lonR = toRad(lon);
+        const ra   = normAngle(toDeg(Math.atan2(Math.sin(lonR) * Math.cos(eps), Math.cos(lonR))));
+        const dec  = toDeg(Math.asin(Math.sin(eps) * Math.sin(lonR)));
+        const { altitude, azimuth } = geoAltAz(ra, dec, d);
+        if (altitude >= 0) {
+          const pt = skyProject(altitude, azimuth, cx, cy, R);
+          ecOn ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y);
+          ecOn = true;
+        } else { ecOn = false; }
+      }
+      ctx.strokeStyle = fg(0.09); ctx.lineWidth = 0.5;
+      ctx.setLineDash([2, 5]); ctx.stroke(); ctx.setLineDash([]);
+
+      // Moon arc — sample ±18 h around dateMs in 30-min steps
+      ctx.beginPath();
+      let arcOn = false;
+      for (let dt = -18 * 3600000; dt <= 18 * 3600000; dt += 1800000) {
+        const { altitude, azimuth } = moonAltAz(new Date(dateMs + dt));
+        if (altitude >= 0) {
+          const pt = skyProject(altitude, azimuth, cx, cy, R);
+          arcOn ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y);
+          arcOn = true;
+        } else { arcOn = false; }
+      }
+      ctx.strokeStyle = lit(0.35); ctx.lineWidth = 1.5; ctx.stroke();
+
+      // Moon position at dateMs
+      const { altitude: mAlt, azimuth: mAz } = moonAltAz(new Date(dateMs));
+      if (mAlt > -15) {
+        const pt = skyProject(Math.max(0, mAlt), mAz, cx, cy, R);
+        ctx.save();
+        if (mAlt >= 0) { ctx.shadowColor = lit(0.7); ctx.shadowBlur = 8; }
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = lit(mAlt >= 0 ? 0.85 : 0.25); ctx.fill();
+        ctx.restore();
+      }
+
+      // Planets
+      ctx.font = `italic 7.5px 'Lora', Georgia, serif`;
+      PLANET_ELS.forEach(({ s, el }) => {
+        const { altitude, azimuth } = planetAltAz(el, new Date(dateMs));
+        if (altitude < -25) return;
+        const pt  = skyProject(Math.max(-25, altitude), azimuth, cx, cy, R);
+        const alp = altitude >= 0 ? 0.60 : 0.16;
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = fg(alp); ctx.fill();
+        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+        ctx.fillStyle = fg(alp * 0.8);
+        ctx.fillText(s, Math.min(pt.x + 4, size - 26), Math.max(pt.y, 10));
+      });
+    }
 
     // ── Time palette ────────────────────────────────────────────────────────────
     // Columns: hour, bg, fg, circleA, circleB, glowNear, glowMid, glowFar, moonLit, moonDark
@@ -306,6 +514,32 @@
       return `rgba(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)},${(a1+(a2-a1)*t).toFixed(3)})`;
     }
 
+    // Perceived brightness 0–1 (Rec. 601 luma)
+    function brightness(hex) {
+      const [r, g, b] = parseRgb(hex);
+      return (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+    }
+
+    // Lift fg toward a readable neutral when bg is too dark, or darken when bg is too light.
+    // Preserves hue by lerping toward a target brightness, not toward white/black.
+    function ensureReadable(fgHex, bgHex) {
+      const bgB = brightness(bgHex);
+      const fgB = brightness(fgHex);
+      const [fR, fG, fB] = parseRgb(fgHex);
+
+      if (bgB < 0.14 && fgB < 0.38) {
+        // Dark background — lift fg toward a muted cool-neutral (#a0a0c0 ≈ 0.38)
+        const t = Math.min(1, (0.38 - fgB) / 0.38);
+        return `rgb(${Math.round(fR + (160-fR)*t)},${Math.round(fG + (160-fG)*t)},${Math.round(fB + (192-fB)*t)})`;
+      }
+      if (bgB > 0.62 && fgB > 0.32) {
+        // Light background — darken fg toward 0.15 perceived brightness
+        const t = Math.min(1, (fgB - 0.32) / 0.55);
+        return `rgb(${Math.round(fR*(1-t*0.65))},${Math.round(fG*(1-t*0.65))},${Math.round(fB*(1-t*0.65))})`;
+      }
+      return fgHex;
+    }
+
     function getPalette() {
       const now = new Date();
       const h = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
@@ -313,9 +547,11 @@
       while (i < PAL.length - 2 && PAL[i+1][0] <= h) i++;
       const a = PAL[i], b = PAL[i+1];
       const t = Math.max(0, Math.min(1, (h - a[0]) / (b[0] - a[0])));
+      const bg = lerpHex(a[1], b[1], t);
+      const fg = ensureReadable(lerpHex(a[2], b[2], t), bg);
       return {
-        bg:   lerpHex(a[1], b[1], t),
-        fg:   lerpHex(a[2], b[2], t),
+        bg,
+        fg,
         cA:   lerpHex(a[3], b[3], t),
         cB:   lerpHex(a[4], b[4], t),
         gN:   lerpRgba(a[5], b[5], t),
@@ -495,8 +731,8 @@
 
       // ── Fill ──
       const fillGrad = ctx.createLinearGradient(0, PAD, 0, H);
-      fillGrad.addColorStop(0, `rgba(${fR},${fG},${fB},0.22)`);
-      fillGrad.addColorStop(1, `rgba(${fR},${fG},${fB},0.04)`);
+      fillGrad.addColorStop(0, `rgba(${fR},${fG},${fB},0.38)`);
+      fillGrad.addColorStop(1, `rgba(${fR},${fG},${fB},0.06)`);
 
       ctx.beginPath();
       ys.forEach((y, x) => x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
@@ -509,12 +745,12 @@
       // ── Outline ──
       ctx.beginPath();
       ys.forEach((y, x) => x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.28)`;
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.48)`;
       ctx.lineWidth = 1;
       ctx.stroke();
 
       // ── Full moon strokes ──
-      // Find next full moon from now
+      fullMoonMarkers = [];
       const halfCycle   = LUNAR_DAYS / 2;
       const currentAge  = lunarAge(new Date(now));
       let daysToNext    = halfCycle - currentAge;
@@ -530,6 +766,7 @@
       while (fmMs <= startMs + SPAN_MS) {
         const x      = (fmMs - startMs) / msPerPx;
         const isNext = Math.abs(fmMs - nextFMMs) < 3600000;
+        fullMoonMarkers.push({ x, ms: fmMs, isNext });
 
         if (isNext) {
           // Glowing stroke — next upcoming full moon
@@ -580,33 +817,270 @@
       ctx.setLineDash([]);
     }
 
+    // ── Orrery ──────────────────────────────────────────────────────────────────
+    // Epicycloid: tracing point on a circle (breath) riding a large ellipse (lunar)
+    const LUNAR_PERIOD_V = 24;    // visual seconds per full lunar revolution
+    const TRAIL_DURATION = 18000; // ms — trail fades over this window
+    const TRAIL_MAX      = 720;   // max stored points (~12 s at 60 fps)
+    const N_TRAIL_PASSES = 10;    // opacity buckets (reduces stroke calls)
+
+    let orrLunarAngle  = 0;
+    let orrBreathAngle = 0;
+    let orrRatio       = BREATHS_PER_MIN; // 16.854 — real UAE breath/min, the natural ratio
+    let orrTrail       = [];
+    let orrLastTs      = null;
+    let orrDragging    = false;
+    let orrDragX       = 0;
+    let orrDragRatio   = orrRatio;
+
+    // Real moon — sampled at actual speed, projected into orrery space
+    const MOON_TRAIL_HOURS    = 8;
+    const MOON_SAMPLE_MS      = 60000; // 1-minute samples
+    let realMoonTrail         = [];    // [{alt, az, t}] using Date.now() ms
+    let lastMoonSampleMs      = null;
+
+    // Project moon alt/az into orrery canvas coords — no dome, just float in space
+    // Same azimuthal equidistant math as sky dome but R scaled for the canvas
+    function moonToXY(alt, az, cx, cy, dim) {
+      const R = dim * 0.44; // horizon maps to ~44% of min dimension from center
+      const r = R * (1 - Math.max(-30, Math.min(90, alt)) / 90);
+      return { x: cx + r * Math.sin(toRad(az)), y: cy - r * Math.cos(toRad(az)) };
+    }
+
+    function backfillMoonTrail() {
+      const nowMs = Date.now();
+      const start = nowMs - MOON_TRAIL_HOURS * 3600000;
+      for (let t = start; t <= nowMs; t += MOON_SAMPLE_MS) {
+        const { altitude, azimuth } = moonAltAz(new Date(t));
+        realMoonTrail.push({ alt: altitude, az: azimuth, t });
+      }
+      lastMoonSampleMs = nowMs;
+    }
+
+    function drawOrrery(ts) {
+      if (orrLastTs === null) orrLastTs = ts;
+      const dt = Math.min((ts - orrLastTs) / 1000, 0.05); // cap to avoid jump on tab refocus
+      orrLastTs = ts;
+
+      const orrCanvas = document.getElementById('orrery');
+      const dpr = window.devicePixelRatio || 1;
+      const W   = window.innerWidth, H = window.innerHeight;
+      if (orrCanvas.width !== Math.round(W * dpr)) {
+        orrCanvas.width  = Math.round(W * dpr);
+        orrCanvas.height = Math.round(H * dpr);
+        orrCanvas.style.width  = W + 'px';
+        orrCanvas.style.height = H + 'px';
+      }
+
+      const ctx = orrCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+
+      const cx  = W / 2, cy = H / 2;
+      const dim = Math.min(W, H);
+      const A   = dim * 0.30;  // ellipse semi-major axis
+      const B   = dim * 0.17;  // ellipse semi-minor axis
+      const R   = dim * 0.11;  // epicycle (breath circle) radius
+
+      // Advance angles
+      const lunarSpd = (Math.PI * 2) / LUNAR_PERIOD_V;
+      orrLunarAngle  += lunarSpd * dt;
+      orrBreathAngle += lunarSpd * orrRatio * dt;
+
+      // Epicycle center on ellipse
+      const ex = cx + A * Math.cos(orrLunarAngle);
+      const ey = cy + B * Math.sin(orrLunarAngle);
+
+      // Tracing point
+      const tx = ex + R * Math.cos(orrBreathAngle);
+      const ty = ey + R * Math.sin(orrBreathAngle);
+
+      // Update trail
+      orrTrail.push({ x: tx, y: ty, t: ts });
+      if (orrTrail.length > TRAIL_MAX) orrTrail.shift();
+      while (orrTrail.length > 1 && ts - orrTrail[0].t > TRAIL_DURATION) orrTrail.shift();
+
+      const [fR, fG, fB] = parseRgb(pal.fg);
+      const [lR, lG, lB] = parseRgb(pal.mLit);
+
+      // ── Structural guides ──
+
+      // Lunar ellipse path
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, A, B, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.16)`;
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([3, 10]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Breath circle
+      ctx.beginPath();
+      ctx.arc(ex, ey, R, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.11)`;
+      ctx.lineWidth   = 0.5;
+      ctx.stroke();
+
+      // Arm: center → epicycle
+      ctx.beginPath();
+      ctx.moveTo(cx, cy); ctx.lineTo(ex, ey);
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.13)`;
+      ctx.lineWidth   = 0.5;
+      ctx.stroke();
+
+      // Arm: epicycle → trace
+      ctx.beginPath();
+      ctx.moveTo(ex, ey); ctx.lineTo(tx, ty);
+      ctx.strokeStyle = `rgba(${lR},${lG},${lB},0.22)`;
+      ctx.lineWidth   = 0.5;
+      ctx.stroke();
+
+      // ── Trail — batched into opacity buckets ──
+      if (orrTrail.length > 1) {
+        // Build buckets: bucket index 0 = oldest, N-1 = newest
+        const segs = Array.from({ length: N_TRAIL_PASSES }, () => []);
+        for (let i = 1; i < orrTrail.length; i++) {
+          const age  = (ts - orrTrail[i].t) / TRAIL_DURATION; // 0=new, 1=old
+          const b    = Math.min(N_TRAIL_PASSES - 1, Math.floor((1 - age) * N_TRAIL_PASSES));
+          segs[b].push(i);
+        }
+        segs.forEach((indices, b) => {
+          if (!indices.length) return;
+          const f = (b + 0.5) / N_TRAIL_PASSES;       // 0→1, oldest→newest
+          const a = Math.pow(f, 2.4) * 0.72;
+          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${a.toFixed(3)})`;
+          ctx.lineWidth   = 0.4 + f * 2.2;
+          ctx.lineCap     = 'round';
+          ctx.beginPath();
+          indices.forEach(i => {
+            ctx.moveTo(orrTrail[i - 1].x, orrTrail[i - 1].y);
+            ctx.lineTo(orrTrail[i].x, orrTrail[i].y);
+          });
+          ctx.stroke();
+        });
+      }
+
+      // ── Dots ──
+
+      // Epicycle center
+      ctx.beginPath();
+      ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${fR},${fG},${fB},0.30)`;
+      ctx.fill();
+
+      // Tracing dot — glowing
+      ctx.save();
+      ctx.shadowColor = `rgba(${lR},${lG},${lB},0.65)`;
+      ctx.shadowBlur  = 12;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${lR},${lG},${lB},0.88)`;
+      ctx.fill();
+      ctx.restore();
+
+      // ── Labels ──
+      ctx.font          = `italic 9px 'Lora', Georgia, serif`;
+      ctx.textAlign     = 'center';
+      ctx.textBaseline  = 'middle';
+      ctx.letterSpacing = '0.12em';
+
+      // "lunar" — at the rightmost point of ellipse, fixed
+      ctx.fillStyle = `rgba(${fR},${fG},${fB},0.38)`;
+      ctx.fillText('lunar', cx + A + 22, cy);
+
+      // "breath" — follows epicycle, offset outward
+      const labelAngle = orrBreathAngle;
+      ctx.fillStyle = `rgba(${lR},${lG},${lB},0.38)`;
+      ctx.fillText('breath', ex + Math.cos(labelAngle) * (R + 16),
+                             ey + Math.sin(labelAngle) * (R + 16));
+
+      // ── Real moon — actual position at true angular speed ──────────────────
+
+      // Collect a new sample every minute (wall-clock time)
+      const nowMs = Date.now();
+      if (lastMoonSampleMs === null || nowMs - lastMoonSampleMs >= MOON_SAMPLE_MS) {
+        const { altitude, azimuth } = moonAltAz(new Date(nowMs));
+        realMoonTrail.push({ alt: altitude, az: azimuth, t: nowMs });
+        lastMoonSampleMs = nowMs;
+        const cutoff = nowMs - MOON_TRAIL_HOURS * 3600000;
+        while (realMoonTrail.length > 1 && realMoonTrail[0].t < cutoff) realMoonTrail.shift();
+      }
+
+      // Draw trail — same bucket pass approach, but more subtle than orrery trail
+      if (realMoonTrail.length > 1) {
+        const N = 8;
+        const buckets = Array.from({ length: N }, () => []);
+        for (let i = 1; i < realMoonTrail.length; i++) {
+          const age = (nowMs - realMoonTrail[i].t) / (MOON_TRAIL_HOURS * 3600000);
+          const b   = Math.min(N - 1, Math.floor((1 - age) * N));
+          buckets[b].push(i);
+        }
+        buckets.forEach((indices, b) => {
+          if (!indices.length) return;
+          const f        = (b + 0.5) / N;
+          const horizFac = realMoonTrail[indices[0]].alt >= 0 ? 1 : 0.22;
+          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${(f * f * 0.38 * horizFac).toFixed(3)})`;
+          ctx.lineWidth   = 0.4 + f * 0.9;
+          ctx.lineCap     = 'round';
+          ctx.beginPath();
+          indices.forEach(i => {
+            const p0 = moonToXY(realMoonTrail[i - 1].alt, realMoonTrail[i - 1].az, cx, cy, dim);
+            const p1 = moonToXY(realMoonTrail[i].alt,     realMoonTrail[i].az,     cx, cy, dim);
+            ctx.moveTo(p0.x, p0.y);
+            ctx.lineTo(p1.x, p1.y);
+          });
+          ctx.stroke();
+        });
+      }
+
+      // Draw current real moon position — ring (hollow) to distinguish from filled trace dot
+      const { altitude: mAlt, azimuth: mAz } = moonAltAz(new Date(nowMs));
+      const mp      = moonToXY(mAlt, mAz, cx, cy, dim);
+      const mAlpha  = mAlt >= 0 ? 0.70 : 0.18;
+      ctx.save();
+      if (mAlt >= 0) {
+        ctx.shadowColor = `rgba(${lR},${lG},${lB},0.40)`;
+        ctx.shadowBlur  = 7;
+      }
+      ctx.beginPath();
+      ctx.arc(mp.x, mp.y, 4.5, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${lR},${lG},${lB},${mAlpha})`;
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // ── DOM refs ────────────────────────────────────────────────────────────────
-    const circleEl       = document.getElementById('circle');
     const breathCountEl  = document.getElementById('breath-count');
     const moonCanvas     = document.getElementById('moon-canvas');
     const moonLabel      = document.getElementById('moon-label');
-    const pastTrigger    = document.getElementById('past-trigger');
     const pastPanel      = document.getElementById('past-panel');
     const pastClose      = document.getElementById('past-close');
-    const moonSlider     = document.getElementById('moon-slider');
-    const sliderLabel    = document.getElementById('slider-label');
     const pastMoonCanvas = document.getElementById('past-moon-canvas');
     const pastPhaseEl    = document.getElementById('past-phase');
     const pastDescEl     = document.getElementById('past-desc');
+    const skyCanvas      = document.getElementById('sky-canvas');
 
     // ── State ───────────────────────────────────────────────────────────────────
-    let startTime      = null;
-    let lastBreathCount = -1;
-    let pal = getPalette();
+    let startTime       = null;
+    let pal             = getPalette();
+
+    // Breath rhythm
+    let breathPhase    = 0;
+    let breathCount    = 0;
+    let breathPrevTs   = null;
+    let surgeLevel     = 0;       // 0 = calm, 1 = full surge
+    let surgeTarget    = 0;
+    let inSurge        = false;
+    let nextSurgeAt    = 15000 + Math.random() * 25000;  // ms from startTime
+    let surgeEndAt     = 0;
+    let fullMoonMarkers = [];
+    let panelDateMs     = null;
 
     // ── Apply palette ───────────────────────────────────────────────────────────
     function applyPalette(p) {
       document.body.style.backgroundColor = p.bg;
       document.body.style.color = p.fg;
-      circleEl.style.background =
-        `radial-gradient(circle at 38% 36%, ${p.cB}, ${p.cA} 65%)`;
-      circleEl.style.boxShadow =
-        `0 0 45px ${p.gN}, 0 0 90px ${p.gM}, 0 0 180px ${p.gF}`;
       pastPanel.style.backgroundColor = p.bg;
     }
 
@@ -618,16 +1092,20 @@
     }
 
     // ── Past panel ──────────────────────────────────────────────────────────────
-    function updatePast(moonsAgo) {
-      const msAgo    = moonsAgo * LUNAR_DAYS * 86400000;
-      const pastDate = new Date(Date.now() - msAgo);
-      const age      = lunarAge(pastDate);
+    function showPanel(ms) {
+      panelDateMs = ms;
+      const date  = new Date(ms);
+      const age   = lunarAge(date);
       drawMoon(pastMoonCanvas, age, pal.mLit, pal.mDark);
       pastPhaseEl.textContent = phaseName(age);
-      pastDescEl.textContent  = PAST_TEXTS[moonsAgo] ?? '';
-      sliderLabel.textContent = moonsAgo === 0 ? 'now'
-        : moonsAgo === 1 ? 'one moon ago'
-        : `${moonsAgo} moons ago`;
+      const diffDays = (ms - Date.now()) / 86400000;
+      const dateStr  = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }).toLowerCase();
+      pastDescEl.textContent = diffDays > 0
+        ? `${dateStr}  ·  in ${Math.round(diffDays)} days`
+        : `${dateStr}  ·  ${Math.round(-diffDays)} days past`;
+      pastPanel.classList.add('open');
+      // Defer sky draw one frame so panel has laid out and offsetWidth is valid
+      requestAnimationFrame(() => drawSky(skyCanvas, ms));
     }
 
     // ── Palette refresh ─────────────────────────────────────────────────────────
@@ -636,48 +1114,93 @@
       applyPalette(pal);
       updateMoon();
       drawTimeline();
-      if (pastPanel.classList.contains('open')) {
-        updatePast(parseInt(moonSlider.value));
+      updateIndicators();
+      if (panelDateMs !== null && pastPanel.classList.contains('open')) {
+        showPanel(panelDateMs);
       }
     }
 
     // ── Animation loop ──────────────────────────────────────────────────────────
     function frame(ts) {
       if (!startTime) startTime = ts;
-      const elapsed  = ts - startTime;
-      const cyclePos = (elapsed % CYCLE_MS) / CYCLE_MS;
+      const elapsed = ts - startTime;
+      const dt      = breathPrevTs !== null ? ts - breathPrevTs : 0;
+      breathPrevTs  = ts;
 
-      const scale = 0.72 + 0.28 * breathScale(cyclePos);
-      circleEl.style.transform = `scale(${scale.toFixed(4)})`;
+      // Surge scheduling — organic, random intervals
+      if (!inSurge && elapsed > nextSurgeAt) {
+        inSurge     = true;
+        surgeTarget = 1;
+        surgeEndAt  = elapsed + 7000 + Math.random() * 8000;   // 7–15s surge
+      }
+      if (inSurge && elapsed > surgeEndAt) {
+        inSurge     = false;
+        surgeTarget = 0;
+        nextSurgeAt = elapsed + 20000 + Math.random() * 40000; // 20–60s calm
+      }
+      surgeLevel += (surgeTarget - surgeLevel) * Math.min(1, dt / 2800);
 
-      const count = Math.floor(elapsed / CYCLE_MS);
-      if (count !== lastBreathCount) {
-        lastBreathCount = count;
-        breathCountEl.textContent = count === 0 ? ''
-          : count === 1 ? '1 breath since you arrived'
-          : `${count} breaths since you arrived`;
+      const currentCycleMs = CMS_CALM + (CMS_SURGE - CMS_CALM) * surgeLevel;
+
+      breathPhase += dt / currentCycleMs;
+      if (breathPhase >= 1) {
+        breathPhase -= 1;
+        breathCount++;
+        breathCountEl.textContent = breathCount === 1 ? '1 breath since you arrived'
+          : `${breathCount} breaths since you arrived`;
       }
 
+
+      drawOrrery(ts);
       requestAnimationFrame(frame);
     }
 
-    // ── Events ──────────────────────────────────────────────────────────────────
-    pastTrigger.addEventListener('click', () => {
-      pastPanel.classList.add('open');
-      updatePast(parseInt(moonSlider.value));
-    });
+    // ── Orrery drag — horizontal drag anywhere adjusts breath/lunar ratio ──────
+    function orrDragStart(clientX, target) {
+      if (target === timelineCanvas || target.closest?.('#past-panel')) return;
+      orrDragging  = true;
+      orrDragX     = clientX;
+      orrDragRatio = orrRatio;
+      document.body.style.cursor = 'ew-resize';
+    }
+    function orrDragMove(clientX) {
+      if (!orrDragging) return;
+      orrRatio = Math.max(1, Math.min(60, orrDragRatio + (clientX - orrDragX) * 0.06));
+    }
+    function orrDragEnd() {
+      orrDragging = false;
+      document.body.style.cursor = '';
+    }
 
+    document.addEventListener('mousedown',  e => orrDragStart(e.clientX, e.target));
+    document.addEventListener('mousemove',  e => orrDragMove(e.clientX));
+    document.addEventListener('mouseup',    orrDragEnd);
+    document.addEventListener('touchstart', e => orrDragStart(e.touches[0].clientX, e.target), { passive: true });
+    document.addEventListener('touchmove',  e => orrDragMove(e.touches[0].clientX),            { passive: true });
+    document.addEventListener('touchend',   orrDragEnd);
+
+    // ── Events ──────────────────────────────────────────────────────────────────
     pastClose.addEventListener('click', () => {
       pastPanel.classList.remove('open');
+      panelDateMs = null;
     });
 
-    moonSlider.addEventListener('input', () => {
-      updatePast(parseInt(moonSlider.value));
+    timelineCanvas.addEventListener('click', e => {
+      const rect   = timelineCanvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left; // CSS px, matches stored x values
+      const hit    = fullMoonMarkers.find(m => Math.abs(m.x - clickX) < 18);
+      if (hit) {
+        showPanel(hit.ms);
+      } else {
+        pastPanel.classList.remove('open');
+        panelDateMs = null;
+      }
     });
 
     window.addEventListener('resize', drawTimeline);
 
     // ── Init ────────────────────────────────────────────────────────────────────
+    backfillMoonTrail();
     refreshPalette();
     setInterval(refreshPalette, 30000);
     requestAnimationFrame(frame);
