@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breath Clock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background-color: #050508;
+      color: #1a1828;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 52px 24px 116px; /* bottom pad leaves room for fixed timeline */
+      min-height: 100vh;
+      transition: background-color 14s ease, color 14s ease;
+      user-select: none;
+    }
+
+    /* ── Moon ── */
+    .moon-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #moon-canvas {
+      display: block;
+      width: 54px;
+      height: 54px;
+    }
+
+    .moon-label {
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.14em;
+      opacity: 0.45;
+    }
+
+    /* ── Circle ── */
+    .main-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 38px;
+    }
+
+    #circle {
+      border-radius: 50%;
+      will-change: transform;
+      transition: background 14s ease, box-shadow 14s ease;
+      width: clamp(180px, 38vmin, 260px);
+      height: clamp(180px, 38vmin, 260px);
+    }
+
+    .breath-count {
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      opacity: 0.3;
+      min-height: 1.5em;
+      text-align: center;
+    }
+
+    /* ── Past trigger ── */
+    #past-trigger {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.2em;
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: 0.22;
+      cursor: pointer;
+      padding: 8px;
+      transition: opacity 0.5s;
+      position: relative;
+      z-index: 2;
+    }
+    #past-trigger:hover { opacity: 0.55; }
+
+    /* ── Timeline ── */
+    #timeline {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 88px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Past panel ── */
+    #past-panel {
+      position: fixed;
+      inset: auto 0 0 0;
+      height: clamp(260px, 42vh, 360px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      transform: translateY(100%);
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                  background-color 14s ease;
+      z-index: 10;
+    }
+    #past-panel.open { transform: translateY(0); }
+
+    .past-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .past-moon-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #past-moon-canvas {
+      display: block;
+      width: 44px;
+      height: 44px;
+    }
+
+    #past-phase {
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.12em;
+      opacity: 0.45;
+    }
+
+    #past-desc {
+      font-size: 13px;
+      line-height: 1.8;
+      opacity: 0.42;
+      text-align: center;
+      max-width: 300px;
+    }
+
+    .slider-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    input[type="range"] {
+      width: min(280px, 88%);
+      -webkit-appearance: none;
+      appearance: none;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.18;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+      cursor: pointer;
+      border: none;
+    }
+
+    #slider-label {
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.13em;
+      opacity: 0.3;
+    }
+
+    #past-close {
+      font-family: 'Lora', Georgia, serif;
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.2em;
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: 0.22;
+      cursor: pointer;
+      padding: 6px;
+      transition: opacity 0.4s;
+    }
+    #past-close:hover { opacity: 0.5; }
+  </style>
+</head>
+<body>
+
+  <div class="moon-section">
+    <canvas id="moon-canvas" width="108" height="108"></canvas>
+    <div class="moon-label" id="moon-label"></div>
+  </div>
+
+  <div class="main-section">
+    <div id="circle"></div>
+    <div class="breath-count" id="breath-count"></div>
+  </div>
+
+  <button id="past-trigger">enter the past</button>
+
+  <canvas id="timeline"></canvas>
+
+  <div id="past-panel">
+    <div class="past-inner">
+      <div class="past-moon-row">
+        <canvas id="past-moon-canvas" width="88" height="88"></canvas>
+        <div id="past-phase"></div>
+      </div>
+      <div id="past-desc"></div>
+      <div class="slider-wrap">
+        <input type="range" id="moon-slider" min="0" max="12" step="1" value="0">
+        <div id="slider-label">now</div>
+      </div>
+      <button id="past-close">return</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Breath constants ────────────────────────────────────────────────────────
+    // UAE 2025 weighted: (0.204×24) + (0.787×15) + (0.009×17) = 16.854 br/min
+    const BREATHS_PER_MIN = 16.854;
+    const CYCLE_MS = 60000 / BREATHS_PER_MIN; // ≈ 3561 ms
+    const INHALE_FRAC = 0.42;
+
+    // ── Lunar constants ─────────────────────────────────────────────────────────
+    const LUNAR_DAYS = 29.53059;
+    const KNOWN_NEW_MOON = new Date('2000-01-06T18:14:00Z');
+
+    // ── Past descriptions ───────────────────────────────────────────────────────
+    const PAST_TEXTS = [
+      'Now. This breath. This moon.',
+      'One moon ago. The air was barely different.',
+      'Two cycles back. A week you half-remember.',
+      'Three moons past. The light fell the same way.',
+      'Four moons ago. Twelve weeks from this breath.',
+      'Five cycles. The season was beginning to turn.',
+      'Half a year of moons. The same sky, different stars.',
+      'Seven cycles gone. A whole season turned quietly.',
+      'Eight moons ago. Before the thing that shifted.',
+      'Nine months, counted in breath, not weeks.',
+      'Ten moons past. A quieter version of now.',
+      'Eleven cycles. The year almost complete.',
+      'One full year of moons. The circle closes.',
+    ];
+
+    // ── Time palette ────────────────────────────────────────────────────────────
+    // Columns: hour, bg, fg, circleA, circleB, glowNear, glowMid, glowFar, moonLit, moonDark
+    const PAL = [
+      [ 0,  '#050508','#13122a','#0b0b1e','#16163a','rgba(42,42,98,0.40)','rgba(32,32,78,0.18)','rgba(22,22,58,0.06)','#cccce2','#050508'],
+      [ 4,  '#060710','#161530','#0d0d26','#1a1a3e','rgba(52,52,118,0.42)','rgba(42,42,98,0.20)','rgba(32,32,78,0.07)','#d2d2e8','#060710'],
+      [ 6,  '#1c1000','#7a4810','#281600','#3e2400','rgba(190,112,16,0.44)','rgba(168,90,6,0.21)','rgba(148,70,0,0.07)','#eed480','#1c1000'],
+      [ 8,  '#ddd09e','#301e08','#c6b66c','#e6d688','rgba(208,172,52,0.54)','rgba(192,152,32,0.27)','rgba(176,136,18,0.09)','#fff4d4','#685016'],
+      [12,  '#f6edd6','#261606','#e6d694','#fff4d2','rgba(232,192,66,0.64)','rgba(218,176,46,0.31)','rgba(202,160,30,0.11)','#ffffff','#ae8e36'],
+      [15,  '#c69654','#331408','#ae7630','#ce9658','rgba(196,122,32,0.56)','rgba(180,102,16,0.28)','rgba(164,86,6,0.10)','#f4d89c','#4e1e08'],
+      [18,  '#260808','#ae3c10','#3a0a08','#580e0a','rgba(182,52,14,0.52)','rgba(160,36,6,0.25)','rgba(140,22,2,0.08)','#eea470','#140404'],
+      [20,  '#0e0806','#3a1808','#160c08','#261208','rgba(126,42,10,0.44)','rgba(106,32,6,0.21)','rgba(86,24,2,0.07)','#e2b484','#0e0806'],
+      [23,  '#050507','#110d18','#08081a','#121226','rgba(40,40,92,0.34)','rgba(30,30,72,0.16)','rgba(20,20,52,0.05)','#d0d0e0','#050507'],
+      [24,  '#050508','#13122a','#0b0b1e','#16163a','rgba(42,42,98,0.40)','rgba(32,32,78,0.18)','rgba(22,22,58,0.06)','#cccce2','#050508'],
+    ];
+
+    // ── Color utilities ─────────────────────────────────────────────────────────
+    function parseRgb(s) {
+      if (s[0] === '#') return [parseInt(s.slice(1,3),16), parseInt(s.slice(3,5),16), parseInt(s.slice(5,7),16)];
+      const m = s.match(/[\d.]+/g);
+      return m ? [+m[0], +m[1], +m[2]] : [0,0,0];
+    }
+
+    function lerpHex(a, b, t) {
+      const [r1,g1,b1] = parseRgb(a), [r2,g2,b2] = parseRgb(b);
+      return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+    }
+
+    function lerpRgba(a, b, t) {
+      const n = s => s.match(/[\d.]+/g).map(Number);
+      const [r1,g1,b1,a1] = n(a), [r2,g2,b2,a2] = n(b);
+      return `rgba(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)},${(a1+(a2-a1)*t).toFixed(3)})`;
+    }
+
+    function getPalette() {
+      const now = new Date();
+      const h = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+      let i = 0;
+      while (i < PAL.length - 2 && PAL[i+1][0] <= h) i++;
+      const a = PAL[i], b = PAL[i+1];
+      const t = Math.max(0, Math.min(1, (h - a[0]) / (b[0] - a[0])));
+      return {
+        bg:   lerpHex(a[1], b[1], t),
+        fg:   lerpHex(a[2], b[2], t),
+        cA:   lerpHex(a[3], b[3], t),
+        cB:   lerpHex(a[4], b[4], t),
+        gN:   lerpRgba(a[5], b[5], t),
+        gM:   lerpRgba(a[6], b[6], t),
+        gF:   lerpRgba(a[7], b[7], t),
+        mLit: lerpHex(a[8], b[8], t),
+        mDark:lerpHex(a[9], b[9], t),
+      };
+    }
+
+    // ── Lunar ───────────────────────────────────────────────────────────────────
+    function lunarAge(date) {
+      const days = (date - KNOWN_NEW_MOON) / 86400000;
+      return ((days % LUNAR_DAYS) + LUNAR_DAYS) % LUNAR_DAYS;
+    }
+
+    function phaseName(age) {
+      const p = age / LUNAR_DAYS;
+      if (p < 0.033 || p > 0.967) return 'new moon';
+      if (p < 0.233) return 'waxing crescent';
+      if (p < 0.283) return 'first quarter';
+      if (p < 0.467) return 'waxing gibbous';
+      if (p < 0.533) return 'full moon';
+      if (p < 0.717) return 'waning gibbous';
+      if (p < 0.783) return 'last quarter';
+      return 'waning crescent';
+    }
+
+    // ── Moon drawing ────────────────────────────────────────────────────────────
+    function drawMoon(canvas, age, litColor, darkColor) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      const r = w / 2 - 2;
+      const cx = w / 2, cy = h / 2;
+      const p = age / LUNAR_DAYS;
+      const isWaxing = p <= 0.5;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = darkColor;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip();
+
+      ctx.fillStyle = darkColor;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.beginPath();
+      if (isWaxing) {
+        ctx.arc(cx, cy, r, -Math.PI/2, Math.PI/2);
+      } else {
+        ctx.arc(cx, cy, r, Math.PI/2, -Math.PI/2);
+      }
+      ctx.closePath();
+      ctx.fillStyle = litColor;
+      ctx.fill();
+
+      const cosVal = Math.cos(p * Math.PI * 2);
+      const xr = Math.abs(cosVal) * r;
+      if (xr > 1) {
+        let onRight, color;
+        if (isWaxing) {
+          onRight = cosVal > 0;
+          color   = cosVal > 0 ? darkColor : litColor;
+        } else {
+          onRight = cosVal < 0;
+          color   = cosVal < 0 ? litColor : darkColor;
+        }
+        ctx.beginPath();
+        if (onRight) {
+          ctx.ellipse(cx, cy, xr, r, 0, -Math.PI/2, Math.PI/2);
+        } else {
+          ctx.ellipse(cx, cy, xr, r, 0, Math.PI/2, -Math.PI/2);
+        }
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      const [dr, dg, db] = parseRgb(darkColor);
+      const edge = ctx.createRadialGradient(cx, cy, r - 3, cx, cy, r + 1);
+      edge.addColorStop(0, 'rgba(0,0,0,0)');
+      edge.addColorStop(1, `rgba(${dr},${dg},${db},1)`);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 1, 0, Math.PI * 2);
+      ctx.fillStyle = edge;
+      ctx.fill();
+    }
+
+    // ── Breath easing ───────────────────────────────────────────────────────────
+    function breathScale(t) {
+      if (t < INHALE_FRAC) {
+        const p = t / INHALE_FRAC;
+        return (1 - Math.cos(Math.PI * p)) / 2;
+      } else {
+        const p = (t - INHALE_FRAC) / (1 - INHALE_FRAC);
+        return (1 + Math.cos(Math.PI * p)) / 2;
+      }
+    }
+
+    // ── Timeline ────────────────────────────────────────────────────────────────
+    // UAE circadian rhythm: [hour, population intensity 0–1]
+    // Peaks reflect Gulf culture: late evenings active, Fajr bump at 4:30am, midday dip
+    const CIRCADIAN = [
+      [0,    0.20],
+      [1,    0.14],
+      [3,    0.08],
+      [4.5,  0.15],  // Fajr prayer
+      [6,    0.30],
+      [7.5,  0.56],
+      [9,    0.78],
+      [11,   0.83],
+      [13,   0.68],  // midday heat dip
+      [15,   0.74],
+      [17,   0.80],
+      [19,   0.88],  // Maghrib, evening activity
+      [21,   0.93],  // social peak — UAE eats and meets late
+      [23,   0.58],
+      [24,   0.20],
+    ];
+
+    function circadianIntensity(hour) {
+      let i = 0;
+      while (i < CIRCADIAN.length - 2 && CIRCADIAN[i+1][0] <= hour) i++;
+      const [h0, v0] = CIRCADIAN[i], [h1, v1] = CIRCADIAN[i+1];
+      const t = (hour - h0) / (h1 - h0);
+      const s = t * t * (3 - 2 * t); // smoothstep
+      return v0 + (v1 - v0) * s;
+    }
+
+    function getUAEHour(ms) {
+      // UAE is UTC+4; compute hour-of-day without relying on local timezone
+      const uaeMs = ms + 4 * 3600000;
+      const d = new Date(uaeMs);
+      return d.getUTCHours() + d.getUTCMinutes() / 60;
+    }
+
+    const timelineCanvas = document.getElementById('timeline');
+
+    function drawTimeline() {
+      const dpr = window.devicePixelRatio || 1;
+      const W   = window.innerWidth;
+      const H   = 88;
+
+      if (timelineCanvas.width !== W * dpr || timelineCanvas.height !== H * dpr) {
+        timelineCanvas.width  = W * dpr;
+        timelineCanvas.height = H * dpr;
+        timelineCanvas.style.width  = W + 'px';
+        timelineCanvas.style.height = H + 'px';
+      }
+
+      const ctx = timelineCanvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset to DPR scale each frame
+      ctx.clearRect(0, 0, W, H);
+
+      const now      = Date.now();
+      const SPAN_MS  = LUNAR_DAYS * 2 * 86400000; // 2 lunar cycles
+      const startMs  = now - LUNAR_DAYS * 86400000; // 1 cycle back
+      const msPerPx  = SPAN_MS / W;
+      const PAD      = 10;
+      const waveH    = H - PAD * 2;
+
+      const [fR, fG, fB] = parseRgb(pal.fg);
+      const [lR, lG, lB] = parseRgb(pal.mLit);
+
+      // ── Build wave y-values ──
+      const ys = [];
+      for (let x = 0; x <= W; x++) {
+        const t    = startMs + x * msPerPx;
+        const hour = getUAEHour(t);
+        ys.push(PAD + waveH * (1 - circadianIntensity(hour)));
+      }
+
+      // ── Fill ──
+      const fillGrad = ctx.createLinearGradient(0, PAD, 0, H);
+      fillGrad.addColorStop(0, `rgba(${fR},${fG},${fB},0.22)`);
+      fillGrad.addColorStop(1, `rgba(${fR},${fG},${fB},0.04)`);
+
+      ctx.beginPath();
+      ys.forEach((y, x) => x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      ctx.fillStyle = fillGrad;
+      ctx.fill();
+
+      // ── Outline ──
+      ctx.beginPath();
+      ys.forEach((y, x) => x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.28)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // ── Full moon strokes ──
+      // Find next full moon from now
+      const halfCycle   = LUNAR_DAYS / 2;
+      const currentAge  = lunarAge(new Date(now));
+      let daysToNext    = halfCycle - currentAge;
+      if (daysToNext < 0) daysToNext += LUNAR_DAYS;
+      const nextFMMs = now + daysToNext * 86400000;
+
+      // Walk backwards from nextFMMs to first one inside the timeline range
+      let fmMs = nextFMMs;
+      while (fmMs - LUNAR_DAYS * 86400000 >= startMs) {
+        fmMs -= LUNAR_DAYS * 86400000;
+      }
+
+      while (fmMs <= startMs + SPAN_MS) {
+        const x      = (fmMs - startMs) / msPerPx;
+        const isNext = Math.abs(fmMs - nextFMMs) < 3600000;
+
+        if (isNext) {
+          // Glowing stroke — next upcoming full moon
+          ctx.save();
+          ctx.shadowColor = `rgba(${lR},${lG},${lB},0.9)`;
+          ctx.shadowBlur  = 12;
+          ctx.strokeStyle = `rgba(${lR},${lG},${lB},0.80)`;
+          ctx.lineWidth   = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, PAD - 2);
+          ctx.lineTo(x, H);
+          ctx.stroke();
+
+          // Dot at top
+          ctx.beginPath();
+          ctx.arc(x, PAD + 2, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${lR},${lG},${lB},0.90)`;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.restore();
+        } else {
+          // Dimmer strokes for other full moons in range
+          ctx.strokeStyle = `rgba(${lR},${lG},${lB},0.20)`;
+          ctx.lineWidth   = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(x, PAD + 2);
+          ctx.lineTo(x, H);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(x, PAD + 5, 2, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${lR},${lG},${lB},0.25)`;
+          ctx.fill();
+        }
+
+        fmMs += LUNAR_DAYS * 86400000;
+      }
+
+      // ── Now marker — dashed, always at W/2 ──
+      const nowX = W / 2;
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.50)`;
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      ctx.moveTo(nowX, 0);
+      ctx.lineTo(nowX, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // ── DOM refs ────────────────────────────────────────────────────────────────
+    const circleEl       = document.getElementById('circle');
+    const breathCountEl  = document.getElementById('breath-count');
+    const moonCanvas     = document.getElementById('moon-canvas');
+    const moonLabel      = document.getElementById('moon-label');
+    const pastTrigger    = document.getElementById('past-trigger');
+    const pastPanel      = document.getElementById('past-panel');
+    const pastClose      = document.getElementById('past-close');
+    const moonSlider     = document.getElementById('moon-slider');
+    const sliderLabel    = document.getElementById('slider-label');
+    const pastMoonCanvas = document.getElementById('past-moon-canvas');
+    const pastPhaseEl    = document.getElementById('past-phase');
+    const pastDescEl     = document.getElementById('past-desc');
+
+    // ── State ───────────────────────────────────────────────────────────────────
+    let startTime      = null;
+    let lastBreathCount = -1;
+    let pal = getPalette();
+
+    // ── Apply palette ───────────────────────────────────────────────────────────
+    function applyPalette(p) {
+      document.body.style.backgroundColor = p.bg;
+      document.body.style.color = p.fg;
+      circleEl.style.background =
+        `radial-gradient(circle at 38% 36%, ${p.cB}, ${p.cA} 65%)`;
+      circleEl.style.boxShadow =
+        `0 0 45px ${p.gN}, 0 0 90px ${p.gM}, 0 0 180px ${p.gF}`;
+      pastPanel.style.backgroundColor = p.bg;
+    }
+
+    // ── Moon update ─────────────────────────────────────────────────────────────
+    function updateMoon() {
+      const age = lunarAge(new Date());
+      drawMoon(moonCanvas, age, pal.mLit, pal.mDark);
+      moonLabel.textContent = phaseName(age);
+    }
+
+    // ── Past panel ──────────────────────────────────────────────────────────────
+    function updatePast(moonsAgo) {
+      const msAgo    = moonsAgo * LUNAR_DAYS * 86400000;
+      const pastDate = new Date(Date.now() - msAgo);
+      const age      = lunarAge(pastDate);
+      drawMoon(pastMoonCanvas, age, pal.mLit, pal.mDark);
+      pastPhaseEl.textContent = phaseName(age);
+      pastDescEl.textContent  = PAST_TEXTS[moonsAgo] ?? '';
+      sliderLabel.textContent = moonsAgo === 0 ? 'now'
+        : moonsAgo === 1 ? 'one moon ago'
+        : `${moonsAgo} moons ago`;
+    }
+
+    // ── Palette refresh ─────────────────────────────────────────────────────────
+    function refreshPalette() {
+      pal = getPalette();
+      applyPalette(pal);
+      updateMoon();
+      drawTimeline();
+      if (pastPanel.classList.contains('open')) {
+        updatePast(parseInt(moonSlider.value));
+      }
+    }
+
+    // ── Animation loop ──────────────────────────────────────────────────────────
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      const elapsed  = ts - startTime;
+      const cyclePos = (elapsed % CYCLE_MS) / CYCLE_MS;
+
+      const scale = 0.72 + 0.28 * breathScale(cyclePos);
+      circleEl.style.transform = `scale(${scale.toFixed(4)})`;
+
+      const count = Math.floor(elapsed / CYCLE_MS);
+      if (count !== lastBreathCount) {
+        lastBreathCount = count;
+        breathCountEl.textContent = count === 0 ? ''
+          : count === 1 ? '1 breath since you arrived'
+          : `${count} breaths since you arrived`;
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    // ── Events ──────────────────────────────────────────────────────────────────
+    pastTrigger.addEventListener('click', () => {
+      pastPanel.classList.add('open');
+      updatePast(parseInt(moonSlider.value));
+    });
+
+    pastClose.addEventListener('click', () => {
+      pastPanel.classList.remove('open');
+    });
+
+    moonSlider.addEventListener('input', () => {
+      updatePast(parseInt(moonSlider.value));
+    });
+
+    window.addEventListener('resize', drawTimeline);
+
+    // ── Init ────────────────────────────────────────────────────────────────────
+    refreshPalette();
+    setInterval(refreshPalette, 30000);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
