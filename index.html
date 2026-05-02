@@ -19,8 +19,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      padding: 52px 24px 116px; /* bottom pad leaves room for fixed timeline */
+      justify-content: center;
+      padding: 24px;
       min-height: 100vh;
       transition: background-color 14s ease, color 14s ease;
       user-select: none;
@@ -34,157 +34,107 @@
       pointer-events: none;
     }
 
-    /* ── Moon ── */
+    /* ── Moon panel (left) ── */
     .moon-section {
-      position: relative;
+      position: fixed;
+      left: 32px;
+      top: 50%;
+      transform: translateY(-50%);
       z-index: 2;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
+      max-width: 148px;
     }
 
     #moon-canvas {
       display: block;
-      width: 54px;
-      height: 54px;
+      width: 112px;
+      height: 112px;
     }
 
     .moon-label {
       font-size: 10px;
       font-style: italic;
       letter-spacing: 0.14em;
-      opacity: 0.60;
+      opacity: 0.92;
+      text-shadow: var(--text-halo, none);
     }
 
-    /* ── Circle ── */
+    /* ── Center content ── */
     .main-section {
       position: relative;
       z-index: 2;
-      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 38px;
+      gap: 22px;
+      max-width: 320px;
+      text-align: center;
+    }
+
+    /* ── Clock panel (right) ── */
+    .clock-section {
+      position: fixed;
+      right: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      max-width: 270px;
     }
 
 
     .breath-count {
       font-size: 12px;
       letter-spacing: 0.1em;
-      opacity: 0.50;
+      opacity: 0.95;
       min-height: 1.5em;
       text-align: center;
+      text-shadow: var(--text-halo, none);
     }
 
-    /* ── Timeline ── */
+    /* ── Timeline canvas (lives inside .clock-section) ── */
     #timeline {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 88px;
-      z-index: 2;
-      cursor: pointer;
-    }
-
-    /* ── Past panel ── */
-    #past-panel {
-      position: fixed;
-      inset: auto 0 0 0;
-      height: clamp(360px, 58vh, 480px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 24px;
-      transform: translateY(100%);
-      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
-                  background-color 14s ease;
-      z-index: 10;
-    }
-    #past-panel.open { transform: translateY(0); }
-
-    .past-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      width: 100%;
-      max-width: 380px;
-    }
-
-    .past-moon-row {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    #past-moon-canvas {
       display: block;
-      width: 44px;
-      height: 44px;
+      width: 260px;
+      height: 260px;
     }
 
-    #past-phase {
+    /* ── Shared panel detail text ── */
+    .panel-detail {
       font-size: 10px;
       font-style: italic;
       letter-spacing: 0.12em;
-      opacity: 0.62;
-    }
-
-    #past-desc {
-      font-size: 13px;
-      line-height: 1.8;
-      opacity: 0.58;
+      opacity: 0.82;
+      text-shadow: var(--text-halo, none);
       text-align: center;
-      max-width: 300px;
+      line-height: 1.75;
     }
 
-    #sky-canvas {
-      display: block;
-      width:  clamp(160px, 36vmin, 200px);
-      height: clamp(160px, 36vmin, 200px);
-    }
-
-    #past-close {
-      font-family: 'Lora', Georgia, serif;
-      font-size: 10px;
-      font-style: italic;
-      letter-spacing: 0.2em;
-      background: none;
-      border: none;
-      color: inherit;
-      opacity: 0.38;
-      cursor: pointer;
-      padding: 6px;
-      transition: opacity 0.4s;
-    }
-    #past-close:hover { opacity: 0.65; }
-
-    /* ── Indicators ── */
-    .indicators {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      font-size: 10px;
-      font-style: italic;
-      letter-spacing: 0.13em;
-      opacity: 0.48;
-      text-align: center;
-      line-height: 1.6;
-    }
-    .ind-rule {
-      width: 28px;
+    .panel-rule {
+      width: 24px;
       height: 1px;
       background: currentColor;
-      opacity: 0.35;
-      margin: 3px 0;
+      opacity: 0.25;
+      margin: 2px 0;
+    }
+
+    .atm-quote {
+      position: relative;
+      z-index: 2;
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.09em;
+      opacity: 0.55;
+      text-shadow: var(--text-halo, none);
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.80;
     }
   </style>
 </head>
@@ -192,35 +142,29 @@
 
   <canvas id="orrery"></canvas>
 
+  <!-- Left: moon + lunar details -->
   <div class="moon-section">
-    <canvas id="moon-canvas" width="108" height="108"></canvas>
+    <canvas id="moon-canvas" width="134" height="134"></canvas>
     <div class="moon-label" id="moon-label"></div>
+    <div class="panel-detail" id="ind-lunar-age">—</div>
+    <div class="panel-rule"></div>
+    <div class="panel-detail" id="ind-lunar-event">—</div>
+    <div class="panel-detail" id="ind-lunar-pos">—</div>
   </div>
 
+  <!-- Center: breath count + quote -->
   <div class="main-section">
     <div class="breath-count" id="breath-count"></div>
+    <p class="atm-quote">The atmosphere is the oldest public share. What you exhale, the other inhales. Together with all animals and plants, we breathe in the same compound of present, past, and future.</p>
   </div>
 
-  <div class="indicators" id="indicators">
-    <div id="ind-lunar-pos">—</div>
-    <div id="ind-lunar-event">—</div>
-    <div class="ind-rule"></div>
-    <div id="ind-uae-pop">—</div>
-    <div id="ind-uae-demo">—</div>
-  </div>
-
-  <canvas id="timeline"></canvas>
-
-  <div id="past-panel">
-    <div class="past-inner">
-      <div class="past-moon-row">
-        <canvas id="past-moon-canvas" width="88" height="88"></canvas>
-        <div id="past-phase"></div>
-      </div>
-      <div id="past-desc"></div>
-      <canvas id="sky-canvas" width="400" height="400"></canvas>
-      <button id="past-close">return</button>
-    </div>
+  <!-- Right: day/night clock + time details -->
+  <div class="clock-section">
+    <canvas id="timeline"></canvas>
+    <div class="panel-detail" id="ind-uae-time">—</div>
+    <div class="panel-rule"></div>
+    <div class="panel-detail" id="ind-temp">—</div>
+    <div class="panel-detail" id="ind-uae-pop">—</div>
   </div>
 
   <script>
@@ -229,8 +173,6 @@
     const BREATHS_PER_MIN = 16.854;
     const CMS_CALM  = 60000 / 12;                      // 5000ms — resting
     const CMS_SURGE = 60000 / (BREATHS_PER_MIN * 1.3); // ~2740ms — collective pulse
-    const INHALE_FRAC = 0.42;
-
     // ── Lunar constants ─────────────────────────────────────────────────────────
     const LUNAR_DAYS = 29.53059;
     const KNOWN_NEW_MOON = new Date('2000-01-06T18:14:00Z');
@@ -245,6 +187,27 @@
       { label: 'adult', frac: 0.787, rate: 15 },
       { label: 'elder', frac: 0.009, rate: 17 },
     ];
+
+    // ── Temperature model ───────────────────────────────────────────────────────
+    // Abu Dhabi monthly mean °C (Jan–Dec). Daily swing ±4.5°C, min ~5am, max ~5pm.
+    const UAE_MONTHLY_TEMP = [18, 19, 22, 27, 32, 35, 37, 37, 34, 30, 25, 20];
+
+    function estimatedUAETemp(date) {
+      const month = date.getUTCMonth();
+      const nextM  = (month + 1) % 12;
+      const day    = date.getUTCDate();
+      const dim    = new Date(Date.UTC(date.getUTCFullYear(), month + 1, 0)).getUTCDate();
+      const base   = UAE_MONTHLY_TEMP[month] + (UAE_MONTHLY_TEMP[nextM] - UAE_MONTHLY_TEMP[month]) * (day - 1) / dim;
+      const h      = getUAEHour(date.getTime());
+      return base - 4.5 * Math.cos(2 * Math.PI * (h - 5) / 24);
+    }
+
+    // Hot air → slower, deeper breaths; cool air → slightly faster
+    function tempBreathFactor(tempC) {
+      if (tempC >= 28) return 1 + (tempC - 28) * 0.030;
+      if (tempC <= 20) return 1 - (20 - tempC) * 0.008;
+      return 1.0;
+    }
 
     function toRad(deg) { return deg * Math.PI / 180; }
     function toDeg(rad) { return rad * 180 / Math.PI; }
@@ -288,16 +251,29 @@
       return dirs[Math.round(az / 22.5) % 16];
     }
 
+    function solarElevation(ms) {
+      const d    = ms / 86400000 + 2440587.5 - 2451545.0;
+      const M    = toRad(357.5291 + 0.98560028 * d);
+      const C    = 1.9148 * Math.sin(M) + 0.0200 * Math.sin(2 * M);
+      const lon  = toRad(normAngle(280.4665 + 0.9856474 * d + C));
+      const eps  = toRad(23.439);
+      const ra   = normAngle(toDeg(Math.atan2(Math.sin(lon) * Math.cos(eps), Math.cos(lon))));
+      const dec  = toDeg(Math.asin(Math.sin(eps) * Math.sin(lon)));
+      const gmst = normAngle(280.46061837 + 360.98564736629 * d);
+      const ha   = toRad(normAngle(gmst + UAE_LON - ra));
+      const sinA = Math.sin(toRad(UAE_LAT)) * Math.sin(toRad(dec))
+                 + Math.cos(toRad(UAE_LAT)) * Math.cos(toRad(dec)) * Math.cos(ha);
+      return toDeg(Math.asin(Math.max(-1, Math.min(1, sinA))));
+    }
+
     function updateIndicators() {
       const now  = new Date();
       const age  = lunarAge(now);
       const illum = Math.round((1 - Math.cos(age / LUNAR_DAYS * 2 * Math.PI)) / 2 * 100);
 
-      const { altitude, azimuth } = moonAltAz(now);
-      const altStr = (altitude >= 0 ? '+' : '') + Math.round(altitude) + '°';
-      const vis    = altitude >= 0 ? 'above horizon' : 'below horizon';
-      document.getElementById('ind-lunar-pos').textContent =
-        `${altStr} · ${azLabel(azimuth)} · ${illum}% lit · ${vis}`;
+      // ── Left panel: lunar ──
+      document.getElementById('ind-lunar-age').textContent =
+        `day ${Math.floor(age) + 1} of ${Math.round(LUNAR_DAYS)}`;
 
       const halfCycle = LUNAR_DAYS / 2;
       let dToFull = halfCycle - age; if (dToFull < 0) dToFull += LUNAR_DAYS;
@@ -307,178 +283,31 @@
           ? `full moon in ${dToFull.toFixed(1)} days`
           : `new moon in ${dToNew.toFixed(1)} days`;
 
+      const { altitude, azimuth } = moonAltAz(now);
+      const altStr = (altitude >= 0 ? '+' : '') + Math.round(altitude) + '°';
+      const horizStr = altitude >= 0 ? 'above horizon' : 'below horizon';
+      document.getElementById('ind-lunar-pos').textContent =
+        `${altStr} · ${azLabel(azimuth)} · ${illum}% lit · ${horizStr}`;
+
+      // ── Right panel: time + rhythm ──
+      const uaeShift = now.getTime() + 4 * 3600000;
+      const uaeDt    = new Date(uaeShift);
+      const hh       = String(uaeDt.getUTCHours()).padStart(2, '0');
+      const mm       = String(uaeDt.getUTCMinutes()).padStart(2, '0');
+      document.getElementById('ind-uae-time').textContent = `${hh}:${mm} GST · Abu Dhabi`;
+
+      const temp   = estimatedUAETemp(now);
+      const factor = tempBreathFactor(temp);
+      const shift  = factor > 1.005
+        ? `${Math.round((factor - 1) * 100)}% slower`
+        : factor < 0.995
+          ? `${Math.round((1 - factor) * 100)}% faster`
+          : 'baseline';
+      document.getElementById('ind-temp').textContent =
+        `~${Math.round(temp)}°C · rhythm ${shift}`;
+
       document.getElementById('ind-uae-pop').textContent =
-        `UAE · ${(UAE_POP / 1e6).toFixed(2)}M · ${BREATHS_PER_MIN.toFixed(3)} br/min weighted`;
-      document.getElementById('ind-uae-demo').textContent =
-        DEMO.map(d => `${Math.round(d.frac * 100)}% ${d.label} ${d.rate}/min`).join(' · ');
-    }
-
-    // ── Planetary orbital elements ──────────────────────────────────────────────
-    // Format: [a, e, I, L, ω̃, Ω,  de, dI, dL, dω̃, dΩ] — rates per Julian century
-    // Source: Jean Meeus "Astronomical Algorithms" 2nd ed / JPL Table 1 (1800–2050)
-    const EARTH_EL = [
-      1.00000261, 0.01671123, -0.00001531, 100.46457166, 102.93768193, 0.0,
-      -0.00004392, -0.01294668, 35999.37244981, 0.32327364, 0.0
-    ];
-    const PLANET_ELS = [
-      { s: 'Merc', el: [0.38709927, 0.20563593,  7.00497902, 252.25032350,  77.45779628,  48.33076593,  0.00001906, -0.00594749, 149474.0722491,  0.16047689, -0.12534081] },
-      { s: 'Venu', el: [0.72333566, 0.00677672,  3.39467605, 181.97909950, 131.60246718,  76.67984255, -0.00004107, -0.00078890,  58519.21264880,  0.00268329, -0.27769418] },
-      { s: 'Mars', el: [1.52371034, 0.09339410,  1.84969142, 355.43299958, -23.94362959,  49.55953891,  0.00007882, -0.00813131,  19141.69551763,  0.44441088, -0.29257343] },
-      { s: 'Jup',  el: [5.20288700, 0.04838624,  1.30439695,  34.39644051,  14.72847983, 100.47390909, -0.00013253, -0.00183714,   3036.30268499,  0.21252668,  0.20469106] },
-      { s: 'Sat',  el: [9.53667594, 0.05386179,  2.48599187,  50.07571329,  92.59887831, 113.66242448, -0.00050991,  0.00193609,   1223.51144399, -0.41897216, -0.28867794] },
-    ];
-
-    function solveKepler(M, e) {
-      let E = M;
-      for (let k = 0; k < 6; k++) E -= (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
-      return E;
-    }
-
-    function orbitXyz(el, T) {
-      const [a, e0, I0, L0, wt0, O0, de, dI, dL, dwt, dO] = el;
-      const e     = e0 + de * T;
-      const I     = toRad(I0 + dI * T);
-      const wTil  = normAngle(wt0 + dwt * T);   // longitude of perihelion (ω̃)
-      const Omega = normAngle(O0  + dO  * T);   // longitude of ascending node (Ω)
-      const L     = normAngle(L0  + dL  * T);   // mean longitude
-      const M     = toRad(normAngle(L - wTil)); // mean anomaly
-      const omega = toRad(normAngle(wTil - Omega)); // argument of perihelion
-      const OmR   = toRad(Omega);
-      const E     = solveKepler(M, e);
-      const v     = 2 * Math.atan2(Math.sqrt(1 + e) * Math.sin(E / 2), Math.sqrt(1 - e) * Math.cos(E / 2));
-      const r     = a * (1 - e * Math.cos(E));
-      return {
-        x: r * (Math.cos(OmR) * Math.cos(omega + v) - Math.sin(OmR) * Math.sin(omega + v) * Math.cos(I)),
-        y: r * (Math.sin(OmR) * Math.cos(omega + v) + Math.cos(OmR) * Math.sin(omega + v) * Math.cos(I)),
-        z: r * (Math.sin(omega + v) * Math.sin(I)),
-      };
-    }
-
-    function geoAltAz(ra, dec, d) {
-      const gmst = normAngle(280.46061837 + 360.98564736629 * d);
-      const ha   = normAngle(gmst + UAE_LON - ra);
-      const latR = toRad(UAE_LAT), decR = toRad(dec), haR = toRad(ha);
-      const sinAlt = Math.sin(latR) * Math.sin(decR) + Math.cos(latR) * Math.cos(decR) * Math.cos(haR);
-      const alt    = toDeg(Math.asin(sinAlt));
-      const cosAz  = Math.max(-1, Math.min(1,
-        (Math.sin(decR) - Math.sin(latR) * sinAlt) / (Math.cos(latR) * Math.cos(toRad(alt)))
-      ));
-      let az = toDeg(Math.acos(cosAz));
-      if (Math.sin(haR) > 0) az = 360 - az;
-      return { altitude: alt, azimuth: az };
-    }
-
-    function planetAltAz(el, date) {
-      const d   = date.getTime() / 86400000 + 2440587.5 - 2451545.0;
-      const T   = d / 36525;
-      const pl  = orbitXyz(el, T);
-      const ea  = orbitXyz(EARTH_EL, T);
-      const dx  = pl.x - ea.x, dy = pl.y - ea.y, dz = pl.z - ea.z;
-      const eps = toRad(23.439 - 0.0000004 * d);
-      const X   = dx;
-      const Y   = dy * Math.cos(eps) - dz * Math.sin(eps);
-      const Z   = dy * Math.sin(eps) + dz * Math.cos(eps);
-      const ra  = normAngle(toDeg(Math.atan2(Y, X)));
-      const dec = toDeg(Math.asin(Z / Math.sqrt(X * X + Y * Y + Z * Z)));
-      return geoAltAz(ra, dec, d);
-    }
-
-    // ── Sky dome ────────────────────────────────────────────────────────────────
-    // Azimuthal equidistant projection: zenith = centre, N = top, horizon = outer circle
-    function skyProject(alt, az, cx, cy, R) {
-      const r = R * Math.max(0, 1 - alt / 90);
-      return { x: cx + r * Math.sin(toRad(az)), y: cy - r * Math.cos(toRad(az)) };
-    }
-
-    function drawSky(canvas, dateMs) {
-      const dpr  = window.devicePixelRatio || 1;
-      const size = canvas.offsetWidth || 180;
-      const px   = Math.round(size * dpr);
-      if (canvas.width !== px) { canvas.width = canvas.height = px; }
-
-      const ctx = canvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, size, size);
-
-      const cx = size / 2, cy = size / 2, R = size / 2 - 14;
-      const [fR, fG, fB] = parseRgb(pal.fg);
-      const [lR, lG, lB] = parseRgb(pal.mLit);
-      const fg  = (a) => `rgba(${fR},${fG},${fB},${a})`;
-      const lit = (a) => `rgba(${lR},${lG},${lB},${a})`;
-
-      // Horizon + altitude rings
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2);
-      ctx.strokeStyle = fg(0.14); ctx.stroke();
-      [30, 60].forEach(alt => {
-        ctx.beginPath(); ctx.arc(cx, cy, R * (1 - alt / 90), 0, Math.PI * 2);
-        ctx.strokeStyle = fg(0.05); ctx.lineWidth = 0.5; ctx.stroke();
-      });
-
-      // Cardinal labels
-      ctx.font = `italic 8px 'Lora', Georgia, serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      [['N', cx, cy - R - 9, 0.22], ['S', cx, cy + R + 9, 0.22],
-       ['E', cx + R + 9, cy, 0.13], ['W', cx - R - 9, cy, 0.13]].forEach(([t, x, y, a]) => {
-        ctx.fillStyle = fg(a); ctx.fillText(t, x, y);
-      });
-
-      // Ecliptic — dashed, very faint
-      const d   = dateMs / 86400000 + 2440587.5 - 2451545.0;
-      const eps = toRad(23.439 - 0.0000004 * d);
-      ctx.beginPath();
-      let ecOn = false;
-      for (let lon = 0; lon <= 360; lon += 3) {
-        const lonR = toRad(lon);
-        const ra   = normAngle(toDeg(Math.atan2(Math.sin(lonR) * Math.cos(eps), Math.cos(lonR))));
-        const dec  = toDeg(Math.asin(Math.sin(eps) * Math.sin(lonR)));
-        const { altitude, azimuth } = geoAltAz(ra, dec, d);
-        if (altitude >= 0) {
-          const pt = skyProject(altitude, azimuth, cx, cy, R);
-          ecOn ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y);
-          ecOn = true;
-        } else { ecOn = false; }
-      }
-      ctx.strokeStyle = fg(0.09); ctx.lineWidth = 0.5;
-      ctx.setLineDash([2, 5]); ctx.stroke(); ctx.setLineDash([]);
-
-      // Moon arc — sample ±18 h around dateMs in 30-min steps
-      ctx.beginPath();
-      let arcOn = false;
-      for (let dt = -18 * 3600000; dt <= 18 * 3600000; dt += 1800000) {
-        const { altitude, azimuth } = moonAltAz(new Date(dateMs + dt));
-        if (altitude >= 0) {
-          const pt = skyProject(altitude, azimuth, cx, cy, R);
-          arcOn ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y);
-          arcOn = true;
-        } else { arcOn = false; }
-      }
-      ctx.strokeStyle = lit(0.35); ctx.lineWidth = 1.5; ctx.stroke();
-
-      // Moon position at dateMs
-      const { altitude: mAlt, azimuth: mAz } = moonAltAz(new Date(dateMs));
-      if (mAlt > -15) {
-        const pt = skyProject(Math.max(0, mAlt), mAz, cx, cy, R);
-        ctx.save();
-        if (mAlt >= 0) { ctx.shadowColor = lit(0.7); ctx.shadowBlur = 8; }
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2);
-        ctx.fillStyle = lit(mAlt >= 0 ? 0.85 : 0.25); ctx.fill();
-        ctx.restore();
-      }
-
-      // Planets
-      ctx.font = `italic 7.5px 'Lora', Georgia, serif`;
-      PLANET_ELS.forEach(({ s, el }) => {
-        const { altitude, azimuth } = planetAltAz(el, new Date(dateMs));
-        if (altitude < -25) return;
-        const pt  = skyProject(Math.max(-25, altitude), azimuth, cx, cy, R);
-        const alp = altitude >= 0 ? 0.60 : 0.16;
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = fg(alp); ctx.fill();
-        ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
-        ctx.fillStyle = fg(alp * 0.8);
-        ctx.fillText(s, Math.min(pt.x + 4, size - 26), Math.max(pt.y, 10));
-      });
+        `${(UAE_POP / 1e6).toFixed(2)}M people · ${BREATHS_PER_MIN.toFixed(3)} br/min`;
     }
 
     // ── Time palette ────────────────────────────────────────────────────────────
@@ -520,24 +349,25 @@
       return (r * 0.299 + g * 0.587 + b * 0.114) / 255;
     }
 
-    // Lift fg toward a readable neutral when bg is too dark, or darken when bg is too light.
-    // Preserves hue by lerping toward a target brightness, not toward white/black.
+    // Guarantee WCAG AA (4.5:1) contrast across all bg brightness values.
+    // Iteratively pushes fg toward a hue-matched pale (dark bg) or near-black (light bg).
+    // Targets 5.5:1 raw to absorb the ~0.95 CSS opacity applied to text elements.
     function ensureReadable(fgHex, bgHex) {
       const bgB = brightness(bgHex);
-      const fgB = brightness(fgHex);
-      const [fR, fG, fB] = parseRgb(fgHex);
-
-      if (bgB < 0.14 && fgB < 0.38) {
-        // Dark background — lift fg toward a muted cool-neutral (#a0a0c0 ≈ 0.38)
-        const t = Math.min(1, (0.38 - fgB) / 0.38);
-        return `rgb(${Math.round(fR + (160-fR)*t)},${Math.round(fG + (160-fG)*t)},${Math.round(fB + (192-fB)*t)})`;
+      let [r, g, b] = parseRgb(fgHex);
+      const fgBInit = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+      // Keep fg on whichever side of bg it starts on; for equal brightness, prefer bright.
+      const goLight = fgBInit >= bgB;
+      const [tR, tG, tB] = goLight ? [215, 208, 222] : [14, 10, 6];
+      for (let i = 0; i < 15; i++) {
+        const fgBr = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+        const lo = Math.min(bgB, fgBr), hi = Math.max(bgB, fgBr);
+        if ((hi + 0.05) / (lo + 0.05) >= 7.0) break;
+        r = Math.round(r + (tR - r) * 0.3);
+        g = Math.round(g + (tG - g) * 0.3);
+        b = Math.round(b + (tB - b) * 0.3);
       }
-      if (bgB > 0.62 && fgB > 0.32) {
-        // Light background — darken fg toward 0.15 perceived brightness
-        const t = Math.min(1, (fgB - 0.32) / 0.55);
-        return `rgb(${Math.round(fR*(1-t*0.65))},${Math.round(fG*(1-t*0.65))},${Math.round(fB*(1-t*0.65))})`;
-      }
-      return fgHex;
+      return `rgb(${r},${g},${b})`;
     }
 
     function getPalette() {
@@ -584,23 +414,44 @@
     function drawMoon(canvas, age, litColor, darkColor) {
       const ctx = canvas.getContext('2d');
       const w = canvas.width, h = canvas.height;
-      const r = w / 2 - 2;
+      const r = w / 2 - 4;
       const cx = w / 2, cy = h / 2;
       const p = age / LUNAR_DAYS;
       const isWaxing = p <= 0.5;
 
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = darkColor;
-      ctx.fillRect(0, 0, w, h);
+
+      const [lR, lG, lB] = parseRgb(litColor);
+      const [dR, dG, dB] = parseRgb(darkColor);
+
+      // Atmospheric glow — halo outside disc, stronger near full moon
+      const glowA = 0.06 + 0.18 * Math.sin(p * Math.PI);
+      const glow = ctx.createRadialGradient(cx, cy, r * 0.75, cx, cy, r * 1.65);
+      glow.addColorStop(0, `rgba(${lR},${lG},${lB},${glowA.toFixed(3)})`);
+      glow.addColorStop(1, `rgba(${lR},${lG},${lB},0)`);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 1.65, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
 
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.clip();
 
+      // Dark side base
       ctx.fillStyle = darkColor;
       ctx.fillRect(0, 0, w, h);
 
+      // Earthshine — very faint luminosity on the dark side
+      const earthshine = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      earthshine.addColorStop(0,   `rgba(${lR},${lG},${lB},0.07)`);
+      earthshine.addColorStop(0.5, `rgba(${lR},${lG},${lB},0.03)`);
+      earthshine.addColorStop(1,   `rgba(${lR},${lG},${lB},0)`);
+      ctx.fillStyle = earthshine;
+      ctx.fillRect(0, 0, w, h);
+
+      // Lit half
       ctx.beginPath();
       if (isWaxing) {
         ctx.arc(cx, cy, r, -Math.PI/2, Math.PI/2);
@@ -611,6 +462,7 @@
       ctx.fillStyle = litColor;
       ctx.fill();
 
+      // Terminator ellipse
       const cosVal = Math.cos(p * Math.PI * 2);
       const xr = Math.abs(cosVal) * r;
       if (xr > 1) {
@@ -633,27 +485,23 @@
         ctx.fill();
       }
 
+      // Limb darkening — edge of disc subtly dims, as on a real sphere
+      const limb = ctx.createRadialGradient(cx, cy, r * 0.52, cx, cy, r);
+      limb.addColorStop(0, 'rgba(0,0,0,0)');
+      limb.addColorStop(1, `rgba(${dR},${dG},${dB},0.45)`);
+      ctx.fillStyle = limb;
+      ctx.fillRect(0, 0, w, h);
+
       ctx.restore();
 
-      const [dr, dg, db] = parseRgb(darkColor);
-      const edge = ctx.createRadialGradient(cx, cy, r - 3, cx, cy, r + 1);
+      // Edge vignette — crisp disc boundary
+      const edge = ctx.createRadialGradient(cx, cy, r - 3, cx, cy, r + 2);
       edge.addColorStop(0, 'rgba(0,0,0,0)');
-      edge.addColorStop(1, `rgba(${dr},${dg},${db},1)`);
+      edge.addColorStop(1, `rgba(${dR},${dG},${dB},1)`);
       ctx.beginPath();
-      ctx.arc(cx, cy, r + 1, 0, Math.PI * 2);
+      ctx.arc(cx, cy, r + 2, 0, Math.PI * 2);
       ctx.fillStyle = edge;
       ctx.fill();
-    }
-
-    // ── Breath easing ───────────────────────────────────────────────────────────
-    function breathScale(t) {
-      if (t < INHALE_FRAC) {
-        const p = t / INHALE_FRAC;
-        return (1 - Math.cos(Math.PI * p)) / 2;
-      } else {
-        const p = (t - INHALE_FRAC) / (1 - INHALE_FRAC);
-        return (1 + Math.cos(Math.PI * p)) / 2;
-      }
     }
 
     // ── Timeline ────────────────────────────────────────────────────────────────
@@ -696,125 +544,148 @@
     const timelineCanvas = document.getElementById('timeline');
 
     function drawTimeline() {
-      const dpr = window.devicePixelRatio || 1;
-      const W   = window.innerWidth;
-      const H   = 88;
+      const dpr  = window.devicePixelRatio || 1;
+      const size = 260;
 
-      if (timelineCanvas.width !== W * dpr || timelineCanvas.height !== H * dpr) {
-        timelineCanvas.width  = W * dpr;
-        timelineCanvas.height = H * dpr;
-        timelineCanvas.style.width  = W + 'px';
-        timelineCanvas.style.height = H + 'px';
+      if (timelineCanvas.width !== size * dpr) {
+        timelineCanvas.width  = size * dpr;
+        timelineCanvas.height = size * dpr;
+        timelineCanvas.style.width  = size + 'px';
+        timelineCanvas.style.height = size + 'px';
       }
 
       const ctx = timelineCanvas.getContext('2d');
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // reset to DPR scale each frame
-      ctx.clearRect(0, 0, W, H);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+
+      const cx = size / 2, cy = size / 2;
+      const innerR  = 76;  // base ring radius
+      const maxWave = 34;  // max wave extension outward
 
       const now      = Date.now();
-      const SPAN_MS  = LUNAR_DAYS * 2 * 86400000; // 2 lunar cycles
-      const startMs  = now - LUNAR_DAYS * 86400000; // 1 cycle back
-      const msPerPx  = SPAN_MS / W;
-      const PAD      = 10;
-      const waveH    = H - PAD * 2;
+      const uaeHour  = getUAEHour(now);
+      const uaeMs    = now + 4 * 3600000;
+      const uaeDate  = new Date(uaeMs);
+      const dayStart = Date.UTC(uaeDate.getUTCFullYear(), uaeDate.getUTCMonth(), uaeDate.getUTCDate()) - 4 * 3600000;
+
+      // midnight at top, clockwise
+      const hToA = h => (h / 24) * Math.PI * 2 - Math.PI / 2;
 
       const [fR, fG, fB] = parseRgb(pal.fg);
-      const [lR, lG, lB] = parseRgb(pal.mLit);
 
-      // ── Build wave y-values ──
-      const ys = [];
-      for (let x = 0; x <= W; x++) {
-        const t    = startMs + x * msPerPx;
-        const hour = getUAEHour(t);
-        ys.push(PAD + waveH * (1 - circadianIntensity(hour)));
+      const N = 240;
+
+      // Pre-compute wave heights for all segments
+      const wave = Array.from({ length: N + 1 }, (_, i) => {
+        const h  = (i / N) * 24;
+        const t  = dayStart + (h / 24) * 86400000;
+        const tf = tempBreathFactor(estimatedUAETemp(new Date(t)));
+        return Math.min(1, circadianIntensity(h % 24) * (2 - tf));
+      });
+
+      // Wave fill — temperature-tinted, alpha raised in daylight hours
+      for (let i = 0; i < N; i++) {
+        const h    = (i + 0.5) / N * 24;
+        const t    = dayStart + (h / 24) * 86400000;
+        const temp = estimatedUAETemp(new Date(t));
+        const elev = solarElevation(t);
+
+        const hot  = Math.max(0, Math.min(1, (temp - 24) / 16));
+        const cold = Math.max(0, Math.min(1, (24 - temp) / 14));
+        const sunF = Math.max(0, Math.min(1, (elev + 6) / 12));
+
+        const r = Math.max(0, Math.min(255, Math.round(fR + (220 - fR) * hot * 0.55 + (60  - fR) * cold * 0.35)));
+        const g = Math.max(0, Math.min(255, Math.round(fG + (100 - fG) * hot * 0.40 + (105 - fG) * cold * 0.25)));
+        const b = Math.max(0, Math.min(255, Math.round(fB + ( 30 - fB) * hot * 0.55 + (200 - fB) * cold * 0.55)));
+        const a = (0.10 + sunF * 0.22 + hot * 0.10 + cold * 0.04).toFixed(3);
+
+        const a0 = hToA(i / N * 24), a1 = hToA((i + 1) / N * 24);
+        const outerR = innerR + maxWave * wave[i];
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, a0, a1);
+        ctx.arc(cx, cy, innerR, a1, a0, true);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.fill();
       }
 
-      // ── Fill ──
-      const fillGrad = ctx.createLinearGradient(0, PAD, 0, H);
-      fillGrad.addColorStop(0, `rgba(${fR},${fG},${fB},0.38)`);
-      fillGrad.addColorStop(1, `rgba(${fR},${fG},${fB},0.06)`);
+      // Day/night arc — thin inner ring colored by solar elevation
+      for (let i = 0; i < N; i++) {
+        const h    = (i + 0.5) / N * 24;
+        const t    = dayStart + (h / 24) * 86400000;
+        const elev = solarElevation(t);
+        const f    = Math.max(0, Math.min(1, (elev + 6) / 12));
 
-      ctx.beginPath();
-      ys.forEach((y, x) => x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-      ctx.lineTo(W, H);
-      ctx.lineTo(0, H);
-      ctx.closePath();
-      ctx.fillStyle = fillGrad;
-      ctx.fill();
+        const r = Math.round(28  + 192 * f);
+        const g = Math.round(18  + 132 * f);
+        const b = Math.round(8   +  32 * f);
+        const a = (0.08 + 0.55 * f).toFixed(2);
 
-      // ── Outline ──
+        const a0 = hToA(i / N * 24), a1 = hToA((i + 1) / N * 24);
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR,     a0, a1);
+        ctx.arc(cx, cy, innerR - 4, a1, a0, true);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+        ctx.fill();
+      }
+
+      // Inner ring outline
       ctx.beginPath();
-      ys.forEach((y, x) => x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.48)`;
-      ctx.lineWidth = 1;
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.12)`;
+      ctx.lineWidth   = 0.5;
       ctx.stroke();
 
-      // ── Full moon strokes ──
-      fullMoonMarkers = [];
-      const halfCycle   = LUNAR_DAYS / 2;
-      const currentAge  = lunarAge(new Date(now));
-      let daysToNext    = halfCycle - currentAge;
-      if (daysToNext < 0) daysToNext += LUNAR_DAYS;
-      const nextFMMs = now + daysToNext * 86400000;
-
-      // Walk backwards from nextFMMs to first one inside the timeline range
-      let fmMs = nextFMMs;
-      while (fmMs - LUNAR_DAYS * 86400000 >= startMs) {
-        fmMs -= LUNAR_DAYS * 86400000;
-      }
-
-      while (fmMs <= startMs + SPAN_MS) {
-        const x      = (fmMs - startMs) / msPerPx;
-        const isNext = Math.abs(fmMs - nextFMMs) < 3600000;
-        fullMoonMarkers.push({ x, ms: fmMs, isNext });
-
-        if (isNext) {
-          // Glowing stroke — next upcoming full moon
-          ctx.save();
-          ctx.shadowColor = `rgba(${lR},${lG},${lB},0.9)`;
-          ctx.shadowBlur  = 12;
-          ctx.strokeStyle = `rgba(${lR},${lG},${lB},0.80)`;
-          ctx.lineWidth   = 1;
-          ctx.beginPath();
-          ctx.moveTo(x, PAD - 2);
-          ctx.lineTo(x, H);
-          ctx.stroke();
-
-          // Dot at top
-          ctx.beginPath();
-          ctx.arc(x, PAD + 2, 3.5, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${lR},${lG},${lB},0.90)`;
-          ctx.shadowBlur = 10;
-          ctx.fill();
-          ctx.restore();
-        } else {
-          // Dimmer strokes for other full moons in range
-          ctx.strokeStyle = `rgba(${lR},${lG},${lB},0.20)`;
-          ctx.lineWidth   = 0.5;
-          ctx.beginPath();
-          ctx.moveTo(x, PAD + 2);
-          ctx.lineTo(x, H);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.arc(x, PAD + 5, 2, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${lR},${lG},${lB},0.25)`;
-          ctx.fill();
-        }
-
-        fmMs += LUNAR_DAYS * 86400000;
-      }
-
-      // ── Now marker — dashed, always at W/2 ──
-      const nowX = W / 2;
-      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.50)`;
-      ctx.lineWidth   = 1;
-      ctx.setLineDash([2, 4]);
+      // Wave outline
       ctx.beginPath();
-      ctx.moveTo(nowX, 0);
-      ctx.lineTo(nowX, H);
+      for (let i = 0; i <= N; i++) {
+        const a      = hToA(i / N * 24);
+        const outerR = innerR + maxWave * wave[i];
+        const x = cx + outerR * Math.cos(a);
+        const y = cy + outerR * Math.sin(a);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.35)`;
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+
+      // Now marker — dashed radial line + bright dot
+      const nowA    = hToA(uaeHour);
+      const nowIdx  = Math.round(uaeHour / 24 * N) % N;
+      const nowOutR = innerR + maxWave * wave[nowIdx];
+      const nowX    = cx + nowOutR * Math.cos(nowA);
+      const nowY    = cy + nowOutR * Math.sin(nowA);
+
+      ctx.save();
+      ctx.shadowColor = `rgba(${fR},${fG},${fB},0.50)`;
+      ctx.shadowBlur  = 6;
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.55)`;
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(nowX, nowY);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(nowX, nowY, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${fR},${fG},${fB},0.92)`;
+      ctx.fill();
+      ctx.restore();
+
+      // Cardinal hour labels
+      ctx.font        = `8px 'Lora', Georgia, serif`;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle   = `rgba(${fR},${fG},${fB},0.28)`;
+      [['0', 0], ['6', 6], ['12', 12], ['18', 18]].forEach(([lbl, h]) => {
+        const a  = hToA(h);
+        const lr = innerR + maxWave + 10;
+        ctx.fillText(lbl, cx + lr * Math.cos(a), cy + lr * Math.sin(a));
+      });
     }
 
     // ── Orrery ──────────────────────────────────────────────────────────────────
@@ -979,7 +850,7 @@
       ctx.restore();
 
       // ── Labels ──
-      ctx.font          = `italic 9px 'Lora', Georgia, serif`;
+      ctx.font          = `italic 10px 'Lora', Georgia, serif`;
       ctx.textAlign     = 'center';
       ctx.textBaseline  = 'middle';
       ctx.letterSpacing = '0.12em';
@@ -1019,8 +890,8 @@
           if (!indices.length) return;
           const f        = (b + 0.5) / N;
           const horizFac = realMoonTrail[indices[0]].alt >= 0 ? 1 : 0.22;
-          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${(f * f * 0.38 * horizFac).toFixed(3)})`;
-          ctx.lineWidth   = 0.4 + f * 0.9;
+          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${(f * 0.65 * horizFac).toFixed(3)})`;
+          ctx.lineWidth   = 1.0 + f * 2.0;
           ctx.lineCap     = 'round';
           ctx.beginPath();
           indices.forEach(i => {
@@ -1033,37 +904,60 @@
         });
       }
 
-      // Draw current real moon position — ring (hollow) to distinguish from filled trace dot
+      // Draw current real moon position
       const { altitude: mAlt, azimuth: mAz } = moonAltAz(new Date(nowMs));
       const mp      = moonToXY(mAlt, mAz, cx, cy, dim);
-      const mAlpha  = mAlt >= 0 ? 0.70 : 0.18;
+      const mAlpha  = mAlt >= 0 ? 0.82 : 0.22;
       ctx.save();
       if (mAlt >= 0) {
-        ctx.shadowColor = `rgba(${lR},${lG},${lB},0.40)`;
-        ctx.shadowBlur  = 7;
+        ctx.shadowColor = `rgba(${lR},${lG},${lB},0.60)`;
+        ctx.shadowBlur  = 14;
       }
       ctx.beginPath();
-      ctx.arc(mp.x, mp.y, 4.5, 0, Math.PI * 2);
+      ctx.arc(mp.x, mp.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle   = `rgba(${lR},${lG},${lB},${(mAlpha * 0.25).toFixed(3)})`;
+      ctx.fill();
       ctx.strokeStyle = `rgba(${lR},${lG},${lB},${mAlpha})`;
-      ctx.lineWidth   = 1;
+      ctx.lineWidth   = 1.5;
       ctx.stroke();
       ctx.restore();
+
+      // Direction arrow — use trail point ~5 min ago for stable direction
+      if (realMoonTrail.length >= 2) {
+        const prevIdx = Math.max(0, realMoonTrail.length - 6);
+        const prev    = realMoonTrail[prevIdx];
+        const p0      = moonToXY(prev.alt, prev.az, cx, cy, dim);
+        const dx = mp.x - p0.x, dy = mp.y - p0.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len > 0.5) {
+          const ux = dx / len, uy = dy / len;
+          const rx = -ux, ry = -uy;
+          const aLen = 14, aAngle = 0.42;
+          const ca = Math.cos(aAngle), sa = Math.sin(aAngle);
+          ctx.save();
+          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${(mAlpha * 0.70).toFixed(3)})`;
+          ctx.lineWidth   = 1;
+          ctx.lineCap     = 'round';
+          ctx.beginPath();
+          ctx.moveTo(mp.x, mp.y);
+          ctx.lineTo(mp.x + aLen * (rx * ca - ry * sa), mp.y + aLen * (rx * sa + ry * ca));
+          ctx.moveTo(mp.x, mp.y);
+          ctx.lineTo(mp.x + aLen * (rx * ca + ry * sa), mp.y + aLen * (-rx * sa + ry * ca));
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
     }
 
     // ── DOM refs ────────────────────────────────────────────────────────────────
     const breathCountEl  = document.getElementById('breath-count');
     const moonCanvas     = document.getElementById('moon-canvas');
     const moonLabel      = document.getElementById('moon-label');
-    const pastPanel      = document.getElementById('past-panel');
-    const pastClose      = document.getElementById('past-close');
-    const pastMoonCanvas = document.getElementById('past-moon-canvas');
-    const pastPhaseEl    = document.getElementById('past-phase');
-    const pastDescEl     = document.getElementById('past-desc');
-    const skyCanvas      = document.getElementById('sky-canvas');
 
     // ── State ───────────────────────────────────────────────────────────────────
     let startTime       = null;
     let pal             = getPalette();
+    let tempFactor      = tempBreathFactor(estimatedUAETemp(new Date()));
 
     // Breath rhythm
     let breathPhase    = 0;
@@ -1074,14 +968,16 @@
     let inSurge        = false;
     let nextSurgeAt    = 15000 + Math.random() * 25000;  // ms from startTime
     let surgeEndAt     = 0;
-    let fullMoonMarkers = [];
-    let panelDateMs     = null;
 
     // ── Apply palette ───────────────────────────────────────────────────────────
     function applyPalette(p) {
       document.body.style.backgroundColor = p.bg;
       document.body.style.color = p.fg;
-      pastPanel.style.backgroundColor = p.bg;
+      const [r, g, b] = parseRgb(p.bg);
+      document.documentElement.style.setProperty(
+        '--text-halo',
+        `0 0 8px rgba(${r},${g},${b},0.90), 0 0 20px rgba(${r},${g},${b},0.60)`
+      );
     }
 
     // ── Moon update ─────────────────────────────────────────────────────────────
@@ -1091,33 +987,14 @@
       moonLabel.textContent = phaseName(age);
     }
 
-    // ── Past panel ──────────────────────────────────────────────────────────────
-    function showPanel(ms) {
-      panelDateMs = ms;
-      const date  = new Date(ms);
-      const age   = lunarAge(date);
-      drawMoon(pastMoonCanvas, age, pal.mLit, pal.mDark);
-      pastPhaseEl.textContent = phaseName(age);
-      const diffDays = (ms - Date.now()) / 86400000;
-      const dateStr  = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }).toLowerCase();
-      pastDescEl.textContent = diffDays > 0
-        ? `${dateStr}  ·  in ${Math.round(diffDays)} days`
-        : `${dateStr}  ·  ${Math.round(-diffDays)} days past`;
-      pastPanel.classList.add('open');
-      // Defer sky draw one frame so panel has laid out and offsetWidth is valid
-      requestAnimationFrame(() => drawSky(skyCanvas, ms));
-    }
-
     // ── Palette refresh ─────────────────────────────────────────────────────────
     function refreshPalette() {
       pal = getPalette();
       applyPalette(pal);
+      tempFactor = tempBreathFactor(estimatedUAETemp(new Date()));
       updateMoon();
       drawTimeline();
       updateIndicators();
-      if (panelDateMs !== null && pastPanel.classList.contains('open')) {
-        showPanel(panelDateMs);
-      }
     }
 
     // ── Animation loop ──────────────────────────────────────────────────────────
@@ -1140,7 +1017,7 @@
       }
       surgeLevel += (surgeTarget - surgeLevel) * Math.min(1, dt / 2800);
 
-      const currentCycleMs = CMS_CALM + (CMS_SURGE - CMS_CALM) * surgeLevel;
+      const currentCycleMs = (CMS_CALM + (CMS_SURGE - CMS_CALM) * surgeLevel) * tempFactor;
 
       breathPhase += dt / currentCycleMs;
       if (breathPhase >= 1) {
@@ -1157,7 +1034,7 @@
 
     // ── Orrery drag — horizontal drag anywhere adjusts breath/lunar ratio ──────
     function orrDragStart(clientX, target) {
-      if (target === timelineCanvas || target.closest?.('#past-panel')) return;
+      if (target === timelineCanvas) return;
       orrDragging  = true;
       orrDragX     = clientX;
       orrDragRatio = orrRatio;
@@ -1179,29 +1056,12 @@
     document.addEventListener('touchmove',  e => orrDragMove(e.touches[0].clientX),            { passive: true });
     document.addEventListener('touchend',   orrDragEnd);
 
-    // ── Events ──────────────────────────────────────────────────────────────────
-    pastClose.addEventListener('click', () => {
-      pastPanel.classList.remove('open');
-      panelDateMs = null;
-    });
-
-    timelineCanvas.addEventListener('click', e => {
-      const rect   = timelineCanvas.getBoundingClientRect();
-      const clickX = e.clientX - rect.left; // CSS px, matches stored x values
-      const hit    = fullMoonMarkers.find(m => Math.abs(m.x - clickX) < 18);
-      if (hit) {
-        showPanel(hit.ms);
-      } else {
-        pastPanel.classList.remove('open');
-        panelDateMs = null;
-      }
-    });
-
     window.addEventListener('resize', drawTimeline);
 
     // ── Init ────────────────────────────────────────────────────────────────────
     backfillMoonTrail();
     refreshPalette();
+    breathCountEl.textContent = 'breathing with 9.97M people';
     setInterval(refreshPalette, 30000);
     requestAnimationFrame(frame);
   </script>
