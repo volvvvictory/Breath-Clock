@@ -158,11 +158,112 @@
       text-decoration: none;
       border-bottom: 1px solid currentColor;
     }
+    /* ── Top buttons ── */
+    .top-buttons {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      gap: 24px;
+    }
+
+    .top-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'Lora', Georgia, serif;
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.14em;
+      color: currentColor;
+      opacity: 0.38;
+      text-shadow: var(--text-halo, none);
+      transition: opacity 0.4s ease;
+      padding: 0;
+    }
+    .top-btn:hover { opacity: 0.80; }
+
+    /* ── Text panel overlay ── */
+    .text-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.55);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+    .text-panel.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .text-panel-inner {
+      max-width: 560px;
+      max-height: 75vh;
+      overflow-y: auto;
+      padding: 48px;
+      font-family: 'Lora', Georgia, serif;
+      font-size: 12px;
+      font-style: italic;
+      line-height: 2;
+      letter-spacing: 0.06em;
+      text-align: left;
+      color: currentColor;
+      text-shadow: none;
+      scrollbar-width: none;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-radius: 2px;
+    }
+    .text-panel-inner::-webkit-scrollbar { display: none; }
+    .text-panel-inner p { margin-bottom: 1.4em; }
+    .text-panel-inner h2 {
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      opacity: 0.55;
+      margin-bottom: 2em;
+      font-style: normal;
+    }
   </style>
 </head>
 <body>
 
   <canvas id="orrery"></canvas>
+
+  <div class="top-buttons">
+    <button class="top-btn" onclick="togglePanel('panel-annotation')">annotation</button>
+    <button class="top-btn" onclick="togglePanel('panel-story')">breath society</button>
+  </div>
+
+  <div class="text-panel" id="panel-annotation" onclick="closePanel(this)">
+    <div class="text-panel-inner" onclick="event.stopPropagation()">
+      <h2>Breath Clock · Viktoria Volokitina</h2>
+      <p>The atmosphere, Emanuele Coccia writes, is the oldest public share. What you exhale, the other inhales. Together with all animals and plants, we breathe in the same literal compound of carbon dioxide, nitrogen and oxygen, and the same metaphoric compound of present, past, and future. To inhale is to allow the world to enter. To exhale is to project yourself into the world.</p>
+      <p>Linear time we have nowadays is a construction. Jacques Le Goff showed how the mechanical clocks were imposed to extract ownership over time. Michel Foucault extended this idea: disciplinary institutions linearized time to transform living bodies into measurable units. The clock was always already a claim about what time is for. Before the mechanical clock, Camilla Power argues, communities organized collective life around the lunar cycle. For at least 30,000 years this first shared calendar remained visible to everyone.</p>
+      <p>Breath Clock returns control over time to the body. This visualization renders time through the collective breathing of the UAE's 10 million inhabitants. Average 16.854 breaths per minute drives the counter, the orrery animation, and the circadian waveform. Temperature data from Abu Dhabi adjusts the rhythm in real time, because the body responds to climate.</p>
+      <p>At the center, an epicycloid traces the mathematical relationship between breath and lunar cycle; the number of breaths fit inside one moon orbit determines the flower-like pattern's shape. Henri Bergson called lived time durée — duration as felt from inside, irreducible to measurement. The orrery draws that duration into a pattern.</p>
+      <p>The breath is the oldest commons, the first medium of collective life, predating any other method of time measurement.</p>
+    </div>
+  </div>
+
+  <div class="text-panel" id="panel-story" onclick="closePanel(this)">
+    <div class="text-panel-inner" onclick="event.stopPropagation()">
+      <h2>Breath Society · Chapter 1</h2>
+      <p>The summer market spread along the valley's lower ground where three communities' rhythms mingled. It arrived as usual by a collective readiness quickening in the air. By midmorning the ground was covered with preserved things — fermented grains in clay vessels, dried medicines wrapped in leaves, smoked fish from the eastern community, woven goods that carried the particular tempo of their makers' hands into their patterns. People were coming with carts and bags. The boy in his teens, wearing a light cotton shirt with two bags on his shoulders, walked among them. His mom had packed the medicines herself that morning in the particular order she always used, each bundle tied with a different knot so he would not confuse them. She was well-known for her remedies. He carried that reputation the way he carried the bundle, carefully.</p>
+      <p>He came in a food tent. First of all he approached a middle-aged man. There were few men inside besides two of them, mostly women's dresses filled the tent and their voices merged into a monotone. He handed over a couple of bundles, they looked into each other and unwound the rhythm on the beads that hung on their hands, while the sound of stone cold beads hitting each other was similar to the monotony of voices. They almost finished when a young woman in a blue dress tugged at his sleeve. She was always a little early, carrying herself with the particular steadiness of someone who had learned to be reliable. She was a single daughter of her mom, who never came there herself. The girl managed the exchange herself, having done so for two seasons already. With an ease that the boy found slightly intimidating she led him to a more secluded spot where he sat down on yellow bags of sawdust, which were used mostly for birds.</p>
+      <p>She examined him, now unhurried, attentive, her fingers reading the knots he had given to her. There was nothing to negotiate, same with the man. Her family's preserved food existed in a relationship that predated both of them, a reciprocity so established it required no discussion. She packed his bag with dried fruit and grain. He updated his beaded string. Three beads moved along the cord, one for the journey, one for the exchange, one for the return. She did the same with hers, her fingers moving without looking down.</p>
+      <p>It was when he turned to leave that he saw it. Two men near the corner, one of them a solar awarer he had seen before at previous markets — tall, unhurried, carrying the particular self-containment of someone who knew things that were useful at travel. He stood out, dressed in coarse-woven clothing, with a weather-beaten tanned face. The other was from a community to the north, a trader whose family had appeared at this market for as long as the boy could remember. They were completing an exchange. But nothing changed hands that the boy could see. No bundle, no vessel, no preserved thing. The solar awarer had touched briefly a small device in his left hand — the boy had seen similar ones before, carried by the road people, they used it for navigation. The trader surprisingly had another one. Something passed between the devices that had no smell and made no sound. A solar awarer looked at the boy, nothing changed on his strong face and left the tent.</p>
+      <p>The boy came to the space where the exchange had happened. His beaded string was in his hand and he realized he had reached for it without deciding to, his fingers counting something that had not occurred. There was nothing to count. Nothing had moved through the atmosphere between those two men. And yet something had transferred. He could feel it the way the council women described feeling a community's breath shifting in the electricity of the air.</p>
+      <p>He updated no beads, just looked at them feeling how they became the same temperature as his hand.</p>
+      <p>On the way home the bundle was heavier and he felt his muscles, his mother's medicines were gone and the dried fruit was real and solid in the bag and everything had happened the way it was supposed to happen. He told her about the exchange with the girl. It was not forbidden to exchange or talk with solar awarers, he knew it. But he did not mention what he had seen. Simply because he did not yet have the words for it, and in a world where what could not be breathed could not quite be said, the silence felt correct.</p>
+    </div>
+  </div>
 
   <!-- Left: moon + lunar details -->
   <div class="moon-section">
@@ -1067,6 +1168,15 @@
     document.addEventListener('touchend',   orrDragEnd);
 
     window.addEventListener('resize', drawTimeline);
+
+    // ── Panel toggle ────────────────────────────────────────────────────────────
+    function togglePanel(id) {
+      const panel = document.getElementById(id);
+      const isOpen = panel.classList.contains('open');
+      document.querySelectorAll('.text-panel').forEach(p => p.classList.remove('open'));
+      if (!isOpen) panel.classList.add('open');
+    }
+    function closePanel(el) { el.classList.remove('open'); }
 
     // ── Init ────────────────────────────────────────────────────────────────────
     refreshPalette();
