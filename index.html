@@ -85,7 +85,7 @@
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      max-width: 270px;
+      max-width: 440px;
     }
 
 
@@ -101,8 +101,8 @@
     /* ── Timeline canvas (lives inside .clock-section) ── */
     #timeline {
       display: block;
-      width: 260px;
-      height: 260px;
+      width: 420px;
+      height: 420px;
     }
 
     /* ── Shared panel detail text ── */
@@ -136,6 +136,28 @@
       max-width: 300px;
       line-height: 1.80;
     }
+
+    .credit {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      font-size: 10px;
+      font-style: italic;
+      letter-spacing: 0.10em;
+      line-height: 1.75;
+      text-align: center;
+      opacity: 0.38;
+      text-shadow: var(--text-halo, none);
+      transition: opacity 0.5s ease;
+    }
+    .credit:hover { opacity: 0.78; }
+    .credit a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid currentColor;
+    }
   </style>
 </head>
 <body>
@@ -165,6 +187,12 @@
     <div class="panel-rule"></div>
     <div class="panel-detail" id="ind-temp">—</div>
     <div class="panel-detail" id="ind-uae-pop">—</div>
+  </div>
+
+  <div class="credit">
+    Breath Clock · built by <a href="https://volvvictory.netlify.app/" target="_blank" rel="noopener">Viktoria Volokitina</a><br>
+    <a href="https://timemachineart.wordpress.com/" target="_blank" rel="noopener">Time Machines: Clocks in History of Technology and Contemporary Art</a><br>
+    Professor Natalia Fedorova · Spring 2026
   </div>
 
   <script>
@@ -307,7 +335,7 @@
         `~${Math.round(temp)}°C · rhythm ${shift}`;
 
       document.getElementById('ind-uae-pop').textContent =
-        `${(UAE_POP / 1e6).toFixed(2)}M people · ${BREATHS_PER_MIN.toFixed(3)} br/min`;
+        `more than 10M people`;
     }
 
     // ── Time palette ────────────────────────────────────────────────────────────
@@ -419,10 +447,12 @@
       const p = age / LUNAR_DAYS;
       const isWaxing = p <= 0.5;
 
-      ctx.clearRect(0, 0, w, h);
-
       const [lR, lG, lB] = parseRgb(litColor);
       const [dR, dG, dB] = parseRgb(darkColor);
+
+      // Fill entire canvas with background color so corners don't show as a square
+      ctx.fillStyle = darkColor;
+      ctx.fillRect(0, 0, w, h);
 
       // Atmospheric glow — halo outside disc, stronger near full moon
       const glowA = 0.06 + 0.18 * Math.sin(p * Math.PI);
@@ -545,7 +575,7 @@
 
     function drawTimeline() {
       const dpr  = window.devicePixelRatio || 1;
-      const size = 260;
+      const size = 420;
 
       if (timelineCanvas.width !== size * dpr) {
         timelineCanvas.width  = size * dpr;
@@ -559,8 +589,8 @@
       ctx.clearRect(0, 0, size, size);
 
       const cx = size / 2, cy = size / 2;
-      const innerR  = 76;  // base ring radius
-      const maxWave = 34;  // max wave extension outward
+      const innerR  = size * 0.30;
+      const maxWave = size * 0.13;
 
       const now      = Date.now();
       const uaeHour  = getUAEHour(now);
@@ -582,6 +612,16 @@
         const tf = tempBreathFactor(estimatedUAETemp(new Date(t)));
         return Math.min(1, circadianIntensity(h % 24) * (2 - tf));
       });
+
+      // Reference waves — January (coolest, max) and August (hottest, min)
+      const refWave = (month) => Array.from({ length: N + 1 }, (_, i) => {
+        const h       = (i / N) * 24;
+        const refDate = new Date(Date.UTC(2026, month, 15, 0, 0, 0) + (h / 24) * 86400000);
+        const tf      = tempBreathFactor(estimatedUAETemp(refDate));
+        return Math.min(1, circadianIntensity(h) * (2 - tf));
+      });
+      const waveMax = refWave(0);   // January
+      const waveMin = refWave(7);   // August
 
       // Wave fill — temperature-tinted, alpha raised in daylight hours
       for (let i = 0; i < N; i++) {
@@ -638,7 +678,22 @@
       ctx.lineWidth   = 0.5;
       ctx.stroke();
 
-      // Wave outline
+      // Reference wave outlines — January (cool/blue) and August (hot/yellow)
+      [[waveMax, '70,130,210', 0.65, 0.75], [waveMin, '215,165,30', 0.65, 0.75]].forEach(([w, color, op, lw]) => {
+        ctx.beginPath();
+        for (let i = 0; i <= N; i++) {
+          const a = hToA(i / N * 24);
+          const x = cx + (innerR + maxWave * w[i]) * Math.cos(a);
+          const y = cy + (innerR + maxWave * w[i]) * Math.sin(a);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = `rgba(${color},${op})`;
+        ctx.lineWidth   = lw;
+        ctx.stroke();
+      });
+
+      // Wave outline — today
       ctx.beginPath();
       for (let i = 0; i <= N; i++) {
         const a      = hToA(i / N * 24);
@@ -648,8 +703,8 @@
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.35)`;
-      ctx.lineWidth   = 1;
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.75)`;
+      ctx.lineWidth   = 1.5;
       ctx.stroke();
 
       // Now marker — dashed radial line + bright dot
@@ -677,60 +732,37 @@
       ctx.restore();
 
       // Cardinal hour labels
-      ctx.font        = `8px 'Lora', Georgia, serif`;
-      ctx.textAlign   = 'center';
+      ctx.font         = `10px 'Lora', Georgia, serif`;
+      ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle   = `rgba(${fR},${fG},${fB},0.28)`;
-      [['0', 0], ['6', 6], ['12', 12], ['18', 18]].forEach(([lbl, h]) => {
+      ctx.fillStyle    = `rgba(${fR},${fG},${fB},0.60)`;
+      [['midnight', 0], ['sunrise', 6], ['midday', 12], ['sunset', 18]].forEach(([lbl, h]) => {
         const a  = hToA(h);
-        const lr = innerR + maxWave + 10;
+        const lr = innerR + maxWave + 8;
         ctx.fillText(lbl, cx + lr * Math.cos(a), cy + lr * Math.sin(a));
       });
     }
 
     // ── Orrery ──────────────────────────────────────────────────────────────────
-    // Epicycloid: tracing point on a circle (breath) riding a large ellipse (lunar)
-    const LUNAR_PERIOD_V = 24;    // visual seconds per full lunar revolution
-    const TRAIL_DURATION = 18000; // ms — trail fades over this window
-    const TRAIL_MAX      = 720;   // max stored points (~12 s at 60 fps)
-    const N_TRAIL_PASSES = 10;    // opacity buckets (reduces stroke calls)
+    const LUNAR_PERIOD_V  = 24;
+    const TRAIL_DURATION  = 18000;
+    const TRAIL_MAX       = 720;
+    const N_TRAIL_PASSES  = 10;
+    const ORR_VISUAL_RATIO = 4;
 
     let orrLunarAngle  = 0;
     let orrBreathAngle = 0;
-    let orrRatio       = BREATHS_PER_MIN; // 16.854 — real UAE breath/min, the natural ratio
+    let orrRatio       = ORR_VISUAL_RATIO;
     let orrTrail       = [];
     let orrLastTs      = null;
     let orrDragging    = false;
     let orrDragX       = 0;
     let orrDragRatio   = orrRatio;
 
-    // Real moon — sampled at actual speed, projected into orrery space
-    const MOON_TRAIL_HOURS    = 8;
-    const MOON_SAMPLE_MS      = 60000; // 1-minute samples
-    let realMoonTrail         = [];    // [{alt, az, t}] using Date.now() ms
-    let lastMoonSampleMs      = null;
-
-    // Project moon alt/az into orrery canvas coords — no dome, just float in space
-    // Same azimuthal equidistant math as sky dome but R scaled for the canvas
-    function moonToXY(alt, az, cx, cy, dim) {
-      const R = dim * 0.44; // horizon maps to ~44% of min dimension from center
-      const r = R * (1 - Math.max(-30, Math.min(90, alt)) / 90);
-      return { x: cx + r * Math.sin(toRad(az)), y: cy - r * Math.cos(toRad(az)) };
-    }
-
-    function backfillMoonTrail() {
-      const nowMs = Date.now();
-      const start = nowMs - MOON_TRAIL_HOURS * 3600000;
-      for (let t = start; t <= nowMs; t += MOON_SAMPLE_MS) {
-        const { altitude, azimuth } = moonAltAz(new Date(t));
-        realMoonTrail.push({ alt: altitude, az: azimuth, t });
-      }
-      lastMoonSampleMs = nowMs;
-    }
 
     function drawOrrery(ts) {
       if (orrLastTs === null) orrLastTs = ts;
-      const dt = Math.min((ts - orrLastTs) / 1000, 0.05); // cap to avoid jump on tab refocus
+      const dt = Math.min((ts - orrLastTs) / 1000, 0.05);
       orrLastTs = ts;
 
       const orrCanvas = document.getElementById('orrery');
@@ -749,24 +781,20 @@
 
       const cx  = W / 2, cy = H / 2;
       const dim = Math.min(W, H);
-      const A   = dim * 0.30;  // ellipse semi-major axis
-      const B   = dim * 0.17;  // ellipse semi-minor axis
-      const R   = dim * 0.11;  // epicycle (breath circle) radius
+      const A   = dim * 0.30;
+      const B   = dim * 0.17;
+      const R   = dim * 0.11;
 
-      // Advance angles
       const lunarSpd = (Math.PI * 2) / LUNAR_PERIOD_V;
       orrLunarAngle  += lunarSpd * dt;
       orrBreathAngle += lunarSpd * orrRatio * dt;
 
-      // Epicycle center on ellipse
       const ex = cx + A * Math.cos(orrLunarAngle);
       const ey = cy + B * Math.sin(orrLunarAngle);
 
-      // Tracing point
       const tx = ex + R * Math.cos(orrBreathAngle);
       const ty = ey + R * Math.sin(orrBreathAngle);
 
-      // Update trail
       orrTrail.push({ x: tx, y: ty, t: ts });
       if (orrTrail.length > TRAIL_MAX) orrTrail.shift();
       while (orrTrail.length > 1 && ts - orrTrail[0].t > TRAIL_DURATION) orrTrail.shift();
@@ -774,16 +802,27 @@
       const [fR, fG, fB] = parseRgb(pal.fg);
       const [lR, lG, lB] = parseRgb(pal.mLit);
 
-      // ── Structural guides ──
+      const moonAngle = (lunarAge(new Date()) / LUNAR_DAYS) * Math.PI * 2 - Math.PI / 2;
+      const moonX = cx + A * Math.cos(moonAngle);
+      const moonY = cy + B * Math.sin(moonAngle);
 
-      // Lunar ellipse path
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, A, B, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.16)`;
-      ctx.lineWidth   = 1;
-      ctx.setLineDash([3, 10]);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Lunar day ticks — 30 marks around the ellipse
+      const currentDay = Math.floor(lunarAge(new Date()));
+      for (let i = 0; i < 30; i++) {
+        const a  = (i / LUNAR_DAYS) * Math.PI * 2 - Math.PI / 2;
+        const px = cx + A * Math.cos(a);
+        const py = cy + B * Math.sin(a);
+        const len = i === currentDay ? 14 : 8;
+        const op  = i === currentDay ? 0.70 : (i < currentDay ? 0.30 : 0.14);
+        const nx  = (px - cx) / Math.sqrt((px-cx)**2 + (py-cy)**2);
+        const ny  = (py - cy) / Math.sqrt((px-cx)**2 + (py-cy)**2);
+        ctx.beginPath();
+        ctx.moveTo(px - nx * (len * 0.3), py - ny * (len * 0.3));
+        ctx.lineTo(px + nx * (len * 0.7), py + ny * (len * 0.7));
+        ctx.strokeStyle = `rgba(${fR},${fG},${fB},${op})`;
+        ctx.lineWidth   = i === currentDay ? 1.5 : 0.75;
+        ctx.stroke();
+      }
 
       // Breath circle
       ctx.beginPath();
@@ -792,11 +831,17 @@
       ctx.lineWidth   = 0.5;
       ctx.stroke();
 
+      // Hub dot at center
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${fR},${fG},${fB},0.65)`;
+      ctx.fill();
+
       // Arm: center → epicycle
       ctx.beginPath();
       ctx.moveTo(cx, cy); ctx.lineTo(ex, ey);
-      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.13)`;
-      ctx.lineWidth   = 0.5;
+      ctx.strokeStyle = `rgba(${fR},${fG},${fB},0.35)`;
+      ctx.lineWidth   = 1;
       ctx.stroke();
 
       // Arm: epicycle → trace
@@ -806,18 +851,17 @@
       ctx.lineWidth   = 0.5;
       ctx.stroke();
 
-      // ── Trail — batched into opacity buckets ──
+      // Trail
       if (orrTrail.length > 1) {
-        // Build buckets: bucket index 0 = oldest, N-1 = newest
         const segs = Array.from({ length: N_TRAIL_PASSES }, () => []);
         for (let i = 1; i < orrTrail.length; i++) {
-          const age  = (ts - orrTrail[i].t) / TRAIL_DURATION; // 0=new, 1=old
-          const b    = Math.min(N_TRAIL_PASSES - 1, Math.floor((1 - age) * N_TRAIL_PASSES));
+          const age = (ts - orrTrail[i].t) / TRAIL_DURATION;
+          const b   = Math.min(N_TRAIL_PASSES - 1, Math.floor((1 - age) * N_TRAIL_PASSES));
           segs[b].push(i);
         }
         segs.forEach((indices, b) => {
           if (!indices.length) return;
-          const f = (b + 0.5) / N_TRAIL_PASSES;       // 0→1, oldest→newest
+          const f = (b + 0.5) / N_TRAIL_PASSES;
           const a = Math.pow(f, 2.4) * 0.72;
           ctx.strokeStyle = `rgba(${lR},${lG},${lB},${a.toFixed(3)})`;
           ctx.lineWidth   = 0.4 + f * 2.2;
@@ -831,9 +875,28 @@
         });
       }
 
-      // ── Dots ──
+      // Absorbed trail — segments near the moon shift toward warm white
+      const ABSORB_R = R * 5;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 1; i < orrTrail.length; i++) {
+        const adx  = orrTrail[i].x - moonX;
+        const ady  = orrTrail[i].y - moonY;
+        const prox = Math.max(0, 1 - Math.sqrt(adx * adx + ady * ady) / ABSORB_R);
+        if (prox < 0.02) continue;
+        const age = (ts - orrTrail[i].t) / TRAIL_DURATION;
+        const a   = prox * prox * Math.pow(1 - age, 1.2) * 1.2;
+        ctx.strokeStyle = `rgba(255,248,220,${a.toFixed(3)})`;
+        ctx.lineWidth   = 1 + prox * 6;
+        ctx.lineCap     = 'round';
+        ctx.beginPath();
+        ctx.moveTo(orrTrail[i - 1].x, orrTrail[i - 1].y);
+        ctx.lineTo(orrTrail[i].x, orrTrail[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
 
-      // Epicycle center
+      // Epicycle center dot
       ctx.beginPath();
       ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${fR},${fG},${fB},0.30)`;
@@ -849,104 +912,51 @@
       ctx.fill();
       ctx.restore();
 
-      // ── Labels ──
+      // "breath" label — follows epicycle, offset outward
       ctx.font          = `italic 10px 'Lora', Georgia, serif`;
       ctx.textAlign     = 'center';
       ctx.textBaseline  = 'middle';
       ctx.letterSpacing = '0.12em';
-
-      // "lunar" — at the rightmost point of ellipse, fixed
-      ctx.fillStyle = `rgba(${fR},${fG},${fB},0.38)`;
-      ctx.fillText('lunar', cx + A + 22, cy);
-
-      // "breath" — follows epicycle, offset outward
       const labelAngle = orrBreathAngle;
       ctx.fillStyle = `rgba(${lR},${lG},${lB},0.38)`;
       ctx.fillText('breath', ex + Math.cos(labelAngle) * (R + 16),
                              ey + Math.sin(labelAngle) * (R + 16));
 
-      // ── Real moon — actual position at true angular speed ──────────────────
-
-      // Collect a new sample every minute (wall-clock time)
-      const nowMs = Date.now();
-      if (lastMoonSampleMs === null || nowMs - lastMoonSampleMs >= MOON_SAMPLE_MS) {
-        const { altitude, azimuth } = moonAltAz(new Date(nowMs));
-        realMoonTrail.push({ alt: altitude, az: azimuth, t: nowMs });
-        lastMoonSampleMs = nowMs;
-        const cutoff = nowMs - MOON_TRAIL_HOURS * 3600000;
-        while (realMoonTrail.length > 1 && realMoonTrail[0].t < cutoff) realMoonTrail.shift();
-      }
-
-      // Draw trail — same bucket pass approach, but more subtle than orrery trail
-      if (realMoonTrail.length > 1) {
-        const N = 8;
-        const buckets = Array.from({ length: N }, () => []);
-        for (let i = 1; i < realMoonTrail.length; i++) {
-          const age = (nowMs - realMoonTrail[i].t) / (MOON_TRAIL_HOURS * 3600000);
-          const b   = Math.min(N - 1, Math.floor((1 - age) * N));
-          buckets[b].push(i);
-        }
-        buckets.forEach((indices, b) => {
-          if (!indices.length) return;
-          const f        = (b + 0.5) / N;
-          const horizFac = realMoonTrail[indices[0]].alt >= 0 ? 1 : 0.22;
-          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${(f * 0.65 * horizFac).toFixed(3)})`;
-          ctx.lineWidth   = 1.0 + f * 2.0;
-          ctx.lineCap     = 'round';
-          ctx.beginPath();
-          indices.forEach(i => {
-            const p0 = moonToXY(realMoonTrail[i - 1].alt, realMoonTrail[i - 1].az, cx, cy, dim);
-            const p1 = moonToXY(realMoonTrail[i].alt,     realMoonTrail[i].az,     cx, cy, dim);
-            ctx.moveTo(p0.x, p0.y);
-            ctx.lineTo(p1.x, p1.y);
-          });
-          ctx.stroke();
-        });
-      }
-
-      // Draw current real moon position
-      const { altitude: mAlt, azimuth: mAz } = moonAltAz(new Date(nowMs));
-      const mp      = moonToXY(mAlt, mAz, cx, cy, dim);
-      const mAlpha  = mAlt >= 0 ? 0.82 : 0.22;
+      // Moon dot on ellipse — position = current lunar phase
       ctx.save();
-      if (mAlt >= 0) {
-        ctx.shadowColor = `rgba(${lR},${lG},${lB},0.60)`;
-        ctx.shadowBlur  = 14;
-      }
+      ctx.shadowColor = `rgba(${lR},${lG},${lB},0.55)`;
+      ctx.shadowBlur  = 10;
       ctx.beginPath();
-      ctx.arc(mp.x, mp.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle   = `rgba(${lR},${lG},${lB},${(mAlpha * 0.25).toFixed(3)})`;
+      ctx.arc(moonX, moonY, 5, 0, Math.PI * 2);
+      ctx.fillStyle   = `rgba(${lR},${lG},${lB},0.18)`;
       ctx.fill();
-      ctx.strokeStyle = `rgba(${lR},${lG},${lB},${mAlpha})`;
+      ctx.strokeStyle = `rgba(${lR},${lG},${lB},0.72)`;
       ctx.lineWidth   = 1.5;
       ctx.stroke();
       ctx.restore();
 
-      // Direction arrow — use trail point ~5 min ago for stable direction
-      if (realMoonTrail.length >= 2) {
-        const prevIdx = Math.max(0, realMoonTrail.length - 6);
-        const prev    = realMoonTrail[prevIdx];
-        const p0      = moonToXY(prev.alt, prev.az, cx, cy, dim);
-        const dx = mp.x - p0.x, dy = mp.y - p0.y;
-        const len = Math.sqrt(dx * dx + dy * dy);
-        if (len > 0.5) {
-          const ux = dx / len, uy = dy / len;
-          const rx = -ux, ry = -uy;
-          const aLen = 14, aAngle = 0.42;
-          const ca = Math.cos(aAngle), sa = Math.sin(aAngle);
-          ctx.save();
-          ctx.strokeStyle = `rgba(${lR},${lG},${lB},${(mAlpha * 0.70).toFixed(3)})`;
-          ctx.lineWidth   = 1;
-          ctx.lineCap     = 'round';
-          ctx.beginPath();
-          ctx.moveTo(mp.x, mp.y);
-          ctx.lineTo(mp.x + aLen * (rx * ca - ry * sa), mp.y + aLen * (rx * sa + ry * ca));
-          ctx.moveTo(mp.x, mp.y);
-          ctx.lineTo(mp.x + aLen * (rx * ca + ry * sa), mp.y + aLen * (-rx * sa + ry * ca));
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
+      // Soft lasso — connect moon illustration to moon dot on ellipse
+      const moonEl   = document.getElementById('moon-canvas');
+      const moonRect = moonEl.getBoundingClientRect();
+      const mPanelX  = moonRect.left + moonRect.width  / 2;
+      const mPanelY  = moonRect.top  + moonRect.height / 2;
+      const midX = (mPanelX + moonX) / 2;
+      const midY = (mPanelY + moonY) / 2 - 40;
+      const lasso = ctx.createLinearGradient(mPanelX, mPanelY, moonX, moonY);
+      lasso.addColorStop(0,   `rgba(${lR},${lG},${lB},0.0)`);
+      lasso.addColorStop(0.2, `rgba(${lR},${lG},${lB},0.18)`);
+      lasso.addColorStop(0.8, `rgba(${lR},${lG},${lB},0.18)`);
+      lasso.addColorStop(1,   `rgba(${lR},${lG},${lB},0.0)`);
+      ctx.save();
+      ctx.shadowColor = `rgba(${lR},${lG},${lB},0.30)`;
+      ctx.shadowBlur  = 8;
+      ctx.beginPath();
+      ctx.moveTo(mPanelX, mPanelY);
+      ctx.quadraticCurveTo(midX, midY, moonX, moonY);
+      ctx.strokeStyle = lasso;
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+      ctx.restore();
     }
 
     // ── DOM refs ────────────────────────────────────────────────────────────────
@@ -1032,7 +1042,7 @@
       requestAnimationFrame(frame);
     }
 
-    // ── Orrery drag — horizontal drag anywhere adjusts breath/lunar ratio ──────
+    // Orrery drag — horizontal drag adjusts breath/lunar ratio
     function orrDragStart(clientX, target) {
       if (target === timelineCanvas) return;
       orrDragging  = true;
@@ -1059,9 +1069,8 @@
     window.addEventListener('resize', drawTimeline);
 
     // ── Init ────────────────────────────────────────────────────────────────────
-    backfillMoonTrail();
     refreshPalette();
-    breathCountEl.textContent = 'breathing with 9.97M people';
+    breathCountEl.textContent = 'breathing with more than 10M people';
     setInterval(refreshPalette, 30000);
     requestAnimationFrame(frame);
   </script>
