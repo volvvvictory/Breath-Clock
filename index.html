@@ -96,6 +96,10 @@
       min-height: 1.5em;
       text-align: center;
       text-shadow: var(--text-halo, none);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      line-height: 1.55;
     }
 
     /* ── Timeline canvas (lives inside .clock-section) ── */
@@ -185,6 +189,29 @@
     }
     .top-btn:hover { opacity: 0.80; }
 
+    /* ── Rewind control ── */
+    .rewind-control {
+      position: fixed;
+      bottom: 92px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 11;
+      width: min(260px, calc(100vw - 48px));
+      align-items: center;
+      color: currentColor;
+      text-shadow: var(--text-halo, none);
+      opacity: 0.56;
+      transition: opacity 0.4s ease;
+    }
+    .rewind-control:hover,
+    .rewind-control:focus-within { opacity: 0.88; }
+
+    #time-rewind {
+      width: 100%;
+      accent-color: currentColor;
+      cursor: pointer;
+    }
+
     /* ── Text panel overlay ── */
     .text-panel {
       position: fixed;
@@ -213,10 +240,10 @@
       line-height: 2;
       letter-spacing: 0.06em;
       text-align: left;
-      color: currentColor;
-      text-shadow: none;
+      color: #f2ecdf;
+      text-shadow: 0 0 14px rgba(0,0,0,0.55);
       scrollbar-width: none;
-      background: rgba(0,0,0,0.55);
+      background: rgba(0,0,0,0.68);
       backdrop-filter: blur(32px);
       -webkit-backdrop-filter: blur(32px);
       border-radius: 2px;
@@ -277,7 +304,11 @@
 
   <!-- Center: breath count + quote -->
   <div class="main-section">
-    <div class="breath-count" id="breath-count"></div>
+    <div class="breath-count" id="breath-count">
+      <div id="breath-current-count"></div>
+      <div id="breath-first-count"></div>
+      <div id="breath-islamic-count"></div>
+    </div>
     <p class="atm-quote">The atmosphere is the oldest public share. What you exhale, the other inhales. Together with all animals and plants, we breathe in the same compound of present, past, and future.</p>
   </div>
 
@@ -288,6 +319,10 @@
     <div class="panel-rule"></div>
     <div class="panel-detail" id="ind-temp">—</div>
     <div class="panel-detail" id="ind-uae-pop">—</div>
+  </div>
+
+  <div class="rewind-control">
+    <input id="time-rewind" type="range" min="-1440" max="0" value="0" step="60" aria-label="Rewind time">
   </div>
 
   <div class="credit">
@@ -396,7 +431,7 @@
     }
 
     function updateIndicators() {
-      const now  = new Date();
+      const now  = getClockDate();
       const age  = lunarAge(now);
       const illum = Math.round((1 - Math.cos(age / LUNAR_DAYS * 2 * Math.PI)) / 2 * 100);
 
@@ -499,9 +534,8 @@
       return `rgb(${r},${g},${b})`;
     }
 
-    function getPalette() {
-      const now = new Date();
-      const h = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+    function getPalette(date = getClockDate()) {
+      const h = getUAEHour(date.getTime()) + date.getUTCSeconds()/3600;
       let i = 0;
       while (i < PAL.length - 2 && PAL[i+1][0] <= h) i++;
       const a = PAL[i], b = PAL[i+1];
@@ -693,7 +727,7 @@
       const innerR  = size * 0.30;
       const maxWave = size * 0.13;
 
-      const now      = Date.now();
+      const now      = getClockMs();
       const uaeHour  = getUAEHour(now);
       const uaeMs    = now + 4 * 3600000;
       const uaeDate  = new Date(uaeMs);
@@ -850,6 +884,7 @@
     const TRAIL_MAX       = 720;
     const N_TRAIL_PASSES  = 10;
     const ORR_VISUAL_RATIO = 4;
+    const ORR_BREATH_SPEED_BOOST = 2.4;
 
     let orrLunarAngle  = 0;
     let orrBreathAngle = 0;
@@ -888,7 +923,7 @@
 
       const lunarSpd = (Math.PI * 2) / LUNAR_PERIOD_V;
       orrLunarAngle  += lunarSpd * dt;
-      orrBreathAngle += lunarSpd * orrRatio * dt;
+      orrBreathAngle += (lunarSpd * orrRatio * ORR_BREATH_SPEED_BOOST * dt) / tempFactor;
 
       const ex = cx + A * Math.cos(orrLunarAngle);
       const ey = cy + B * Math.sin(orrLunarAngle);
@@ -903,12 +938,13 @@
       const [fR, fG, fB] = parseRgb(pal.fg);
       const [lR, lG, lB] = parseRgb(pal.mLit);
 
-      const moonAngle = (lunarAge(new Date()) / LUNAR_DAYS) * Math.PI * 2 - Math.PI / 2;
+      const clockDate = getClockDate();
+      const moonAngle = (lunarAge(clockDate) / LUNAR_DAYS) * Math.PI * 2 - Math.PI / 2;
       const moonX = cx + A * Math.cos(moonAngle);
       const moonY = cy + B * Math.sin(moonAngle);
 
       // Lunar day ticks — 30 marks around the ellipse
-      const currentDay = Math.floor(lunarAge(new Date()));
+      const currentDay = Math.floor(lunarAge(clockDate));
       for (let i = 0; i < 30; i++) {
         const a  = (i / LUNAR_DAYS) * Math.PI * 2 - Math.PI / 2;
         const px = cx + A * Math.cos(a);
@@ -1061,18 +1097,135 @@
     }
 
     // ── DOM refs ────────────────────────────────────────────────────────────────
-    const breathCountEl  = document.getElementById('breath-count');
-    const moonCanvas     = document.getElementById('moon-canvas');
-    const moonLabel      = document.getElementById('moon-label');
+    const breathCurrentEl = document.getElementById('breath-current-count');
+    const breathFirstEl   = document.getElementById('breath-first-count');
+    const breathIslamicEl = document.getElementById('breath-islamic-count');
+    const moonCanvas      = document.getElementById('moon-canvas');
+    const moonLabel       = document.getElementById('moon-label');
+    const rewindSlider    = document.getElementById('time-rewind');
+
+    // ── Rewind time ─────────────────────────────────────────────────────────────
+    let rewindOffsetMs = 0;
+
+    function getClockMs() {
+      return Date.now() + rewindOffsetMs;
+    }
+
+    function getClockDate() {
+      return new Date(getClockMs());
+    }
+
+    function updateRewind() {
+      let minutes = Math.max(-1440, Math.min(0, Number(rewindSlider.value) || 0));
+      minutes = Math.max(-1440, Math.min(0, Math.round(minutes / 60) * 60));
+      if (Number(rewindSlider.value) !== minutes) rewindSlider.value = String(minutes);
+      rewindOffsetMs = minutes * 60000;
+      updateBreathCountLabels();
+      refreshPalette(true);
+    }
+
+    // ── First-arrival breath tracking ───────────────────────────────────────────
+    const FIRST_ARRIVAL_COOKIE = 'breathClockFirstArrival';
+    const ISLAMIC_CALENDAR_START_MS = Date.UTC(622, 6, 16, 0, 0, 0);
+    const COUNTER_SAMPLE_MS = 3600000;
+    const COUNTER_RATE_SCALE = 60000;
+    const yearBreathCache = new Map();
+
+    function getCookie(name) {
+      return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+    }
+
+    function setCookie(name, value, maxAgeDays) {
+      document.cookie = `${name}=${encodeURIComponent(value)}; max-age=${maxAgeDays * 86400}; path=/; SameSite=Lax`;
+    }
+
+    function getFirstArrivalMs(defaultMs) {
+      const stored = Number(decodeURIComponent(getCookie(FIRST_ARRIVAL_COOKIE) || ''));
+      if (Number.isFinite(stored) && stored > 0 && stored <= Date.now()) return stored;
+      setCookie(FIRST_ARRIVAL_COOKIE, String(defaultMs), 400);
+      return defaultMs;
+    }
+
+    function tempAdjustedBreathsBetween(startMs, endMs) {
+      if (endMs <= startMs) return 0;
+      let total = 0;
+      let cursor = startMs;
+      while (cursor < endMs) {
+        const next = Math.min(endMs, cursor + COUNTER_SAMPLE_MS);
+        const midpoint = cursor + (next - cursor) / 2;
+        const factor = tempBreathFactor(estimatedUAETemp(new Date(midpoint)));
+        total += ((next - cursor) / COUNTER_RATE_SCALE) * (BREATHS_PER_MIN / factor);
+        cursor = next;
+      }
+      return total;
+    }
+
+    function isLeapYear(year) {
+      return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    }
+
+    function breathsForGregorianYear(year) {
+      const cacheKey = isLeapYear(year) ? 'leap' : 'common';
+      if (!yearBreathCache.has(cacheKey)) {
+        const sampleYear = cacheKey === 'leap' ? 2024 : 2023;
+        yearBreathCache.set(cacheKey, tempAdjustedBreathsBetween(
+          Date.UTC(sampleYear, 0, 1, 0, 0, 0),
+          Date.UTC(sampleYear + 1, 0, 1, 0, 0, 0)
+        ));
+      }
+      return yearBreathCache.get(cacheKey);
+    }
+
+    function tempAdjustedBreathsSince(startMs) {
+      const endMs = getClockMs();
+      if (endMs <= startMs) return 0;
+
+      const startYear = new Date(startMs).getUTCFullYear();
+      const endYear = new Date(endMs).getUTCFullYear();
+      if (endYear - startYear < 2) {
+        return Math.floor(tempAdjustedBreathsBetween(startMs, endMs));
+      }
+
+      let total = tempAdjustedBreathsBetween(startMs, Date.UTC(startYear + 1, 0, 1, 0, 0, 0));
+      for (let year = startYear + 1; year < endYear; year++) {
+        total += breathsForGregorianYear(year);
+      }
+      total += tempAdjustedBreathsBetween(Date.UTC(endYear, 0, 1, 0, 0, 0), endMs);
+      return Math.floor(total);
+    }
+
+    function formatBreathCount(count, label) {
+      const noun = count === 1 ? 'breath' : 'breaths';
+      return `${count.toLocaleString('en-US')} ${noun} ${label}`;
+    }
+
+    function updateBreathCountLabels() {
+      breathCurrentEl.textContent = formatBreathCount(
+        tempAdjustedBreathsSince(currentArrivalMs),
+        'since current arrival'
+      );
+      breathFirstEl.textContent = formatBreathCount(
+        tempAdjustedBreathsSince(firstArrivalMs),
+        'since first arrival'
+      );
+      breathIslamicEl.textContent = formatBreathCount(
+        tempAdjustedBreathsSince(ISLAMIC_CALENDAR_START_MS),
+        'since the Hijra'
+      );
+    }
 
     // ── State ───────────────────────────────────────────────────────────────────
     let startTime       = null;
     let pal             = getPalette();
-    let tempFactor      = tempBreathFactor(estimatedUAETemp(new Date()));
+    let tempFactor      = tempBreathFactor(estimatedUAETemp(getClockDate()));
+    const currentArrivalMs = Date.now();
+    const firstArrivalMs = getFirstArrivalMs(currentArrivalMs);
 
     // Breath rhythm
-    let breathPhase    = 0;
-    let breathCount    = 0;
+    let breathPhase    = ((Date.now() - currentArrivalMs) * BREATHS_PER_MIN / 60000) % 1;
     let breathPrevTs   = null;
     let surgeLevel     = 0;       // 0 = calm, 1 = full surge
     let surgeTarget    = 0;
@@ -1081,7 +1234,8 @@
     let surgeEndAt     = 0;
 
     // ── Apply palette ───────────────────────────────────────────────────────────
-    function applyPalette(p) {
+    function applyPalette(p, immediate = false) {
+      if (immediate) document.body.style.transition = 'none';
       document.body.style.backgroundColor = p.bg;
       document.body.style.color = p.fg;
       const [r, g, b] = parseRgb(p.bg);
@@ -1089,20 +1243,21 @@
         '--text-halo',
         `0 0 8px rgba(${r},${g},${b},0.90), 0 0 20px rgba(${r},${g},${b},0.60)`
       );
+      if (immediate) requestAnimationFrame(() => { document.body.style.transition = ''; });
     }
 
     // ── Moon update ─────────────────────────────────────────────────────────────
     function updateMoon() {
-      const age = lunarAge(new Date());
+      const age = lunarAge(getClockDate());
       drawMoon(moonCanvas, age, pal.mLit, pal.mDark);
       moonLabel.textContent = phaseName(age);
     }
 
     // ── Palette refresh ─────────────────────────────────────────────────────────
-    function refreshPalette() {
+    function refreshPalette(immediate = false) {
       pal = getPalette();
-      applyPalette(pal);
-      tempFactor = tempBreathFactor(estimatedUAETemp(new Date()));
+      applyPalette(pal, immediate);
+      tempFactor = tempBreathFactor(estimatedUAETemp(getClockDate()));
       updateMoon();
       drawTimeline();
       updateIndicators();
@@ -1132,10 +1287,9 @@
 
       breathPhase += dt / currentCycleMs;
       if (breathPhase >= 1) {
-        breathPhase -= 1;
-        breathCount++;
-        breathCountEl.textContent = breathCount === 1 ? '1 breath since you arrived'
-          : `${breathCount} breaths since you arrived`;
+        const completedBreaths = Math.floor(breathPhase);
+        breathPhase -= completedBreaths;
+        updateBreathCountLabels();
       }
 
 
@@ -1146,6 +1300,7 @@
     // Orrery drag — horizontal drag adjusts breath/lunar ratio
     function orrDragStart(clientX, target) {
       if (target === timelineCanvas) return;
+      if (target.closest && target.closest('.rewind-control')) return;
       orrDragging  = true;
       orrDragX     = clientX;
       orrDragRatio = orrRatio;
@@ -1166,6 +1321,7 @@
     document.addEventListener('touchstart', e => orrDragStart(e.touches[0].clientX, e.target), { passive: true });
     document.addEventListener('touchmove',  e => orrDragMove(e.touches[0].clientX),            { passive: true });
     document.addEventListener('touchend',   orrDragEnd);
+    rewindSlider.addEventListener('input', updateRewind);
 
     window.addEventListener('resize', drawTimeline);
 
@@ -1180,7 +1336,8 @@
 
     // ── Init ────────────────────────────────────────────────────────────────────
     refreshPalette();
-    breathCountEl.textContent = 'breathing with more than 10M people';
+    updateBreathCountLabels();
+    setInterval(updateBreathCountLabels, 1000);
     setInterval(refreshPalette, 30000);
     requestAnimationFrame(frame);
   </script>
